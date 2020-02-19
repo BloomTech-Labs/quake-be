@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 server.get('/', (req, res) => {
     res.send(`
     <div>
-        <h1>Welcome to DadJokes Api</h1>
+        <h1>Welcome to Quake Live</h1>
       
     </div>
     `)
