@@ -13,9 +13,6 @@ exports.up = function(knex) {
       .notNullable();
 
       users
-      .string("userID", 255)
-
-      users
       .integer("zipcode")
 
       users
