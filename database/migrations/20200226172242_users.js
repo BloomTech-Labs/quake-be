@@ -22,19 +22,19 @@ exports.up = function(knex) {
       .integer("loginCount")
 
       users
-      .string("email address", 255)
+      .string("emailAddress", 255)
       .notNullable();
 
       users
-      .string("first name", 255)
+      .string("firstName", 255)
       .notNullable()
 
       users
-      .string("last name", 255)
+      .string("lastName", 255)
       .notNullable()
 
       users
-      .string("phone number", 255)
+      .string("phoneNumber", 255)
   })
 };
 

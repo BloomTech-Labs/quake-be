@@ -29,7 +29,7 @@ router.post("/login", (req, res) => {
   Users.findBy({ username })
     .first()
     .then(user => {
-      if (user && bcrypt.compareSync(password, client.password)) {
+      if (user && bcrypt.compareSync(password, user.password)) {
         // pass the found user into the genToken() method, and get the token
         const token = genToken(user);
         // return the found user's username, and the token"

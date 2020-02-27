@@ -12,7 +12,12 @@ const PORT = process.env.PORT || 3000;
 //     `)
 // })
 
-// // -- final middleware --
+server.get("/", (req, res) => {
+  res.status(200).json({ api: "up" });
+});
+
+
+// -- final middleware --
 // server.use(function (req, res) {
 //     res.status(404).send(`
 //     <div>
