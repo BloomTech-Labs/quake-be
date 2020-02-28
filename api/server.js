@@ -20,6 +20,11 @@ server.use(morgan('combined'))
 server.use("/api/auth", authRouter);
 // server.use("/api/users", authenticate, usersRouter);
 
+server.get("/", (req, res) => {
+    res.status(200).json({ api: "up" });
+  });
+  
+  
 
 
 
