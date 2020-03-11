@@ -1,12 +1,12 @@
 require('dotenv').config()
-const server = require('./server')
+const server = require('./api/server.js')
 
 const PORT = process.env.PORT || 3000;
 
 server.get('/', (req, res) => {
     res.send(`
     <div>
-        <h1>Welcome to Quake Live</h1>
+        <h1>Welcome to Quake Live!</h1>
       
     </div>
     `)
@@ -20,6 +20,7 @@ server.use(function (req, res) {
     </div>
     `);
 })
+
 
 server.listen(PORT, () => {
     console.log(`********//   API OPEN ON PORT ${PORT}  //********`)
