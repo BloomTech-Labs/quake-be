@@ -1,22 +1,39 @@
-require('dotenv').config();
+const dbConnection = process.env.DATABASE_URL;
+
 module.exports = {
   development: {
-    client: 'sqlite3',
-    //This was updated with DB for Heroku
-    connection: { filename: './data/auth.db3' },
+    client: "pg",
+    connection: { filename: "./database/clients.db3" },
     useNullAsDefault: true,
     migrations: {
-      directory: './data/migrations',
+      directory: "./database/migrations",
+      tableName: "dbmigrations"
     },
-    seeds: { directory: './data/seeds' },
+    seeds: { directory: "./database/seeds" }
   },
-//This part is done w POSTGRES
+
   production: {
-    client: 'pg',
-    connection: process.env.DATABASE_URL,
+    client: "pg",
+    connection: dbConnection,
     migrations: {
-      directory: './data/migrations',
+      directory: "./database/migrations"
     },
-    seeds: { directory: './data/seeds' },
+    seeds: {
+      directory: "./database/seeds"
+    }
   },
+
+  testing: {
+    client: "pg",
+    connection: {
+      filename: "./database/test.db3"
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: "./database/migrations"
+    },
+    seeds: {
+      directory: "./database/seeds"
+    }
+  }
 };
