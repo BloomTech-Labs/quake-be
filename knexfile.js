@@ -1,4 +1,4 @@
-const dbConnection = DB_URL;
+const dbConnection = DATABASE_URL;
 
 module.exports = {
   development: {
@@ -18,7 +18,7 @@ module.exports = {
     migrations: {
       directory: "./database/migrations"
     },
-    
+
     ssl: true,
 
     seeds: {
