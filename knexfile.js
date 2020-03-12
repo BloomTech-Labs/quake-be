@@ -1,4 +1,4 @@
-const dbConnection = process.env.DATABASE_URL;
+const dbConnection = DB_URL;
 
 module.exports = {
   development: {
@@ -18,6 +18,9 @@ module.exports = {
     migrations: {
       directory: "./database/migrations"
     },
+    
+    ssl: true,
+
     seeds: {
       directory: "./database/seeds"
     }
