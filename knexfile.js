@@ -9,7 +9,7 @@ module.exports = {
     migrations: {
       directory: './database/migrations',
     },
-    seeds: { directory: './database/seeds' },
+    seeds: { directory: '../database/seeds' },
   },
 //This part is done w POSTGRES
   production: {
