@@ -13,7 +13,7 @@ module.exports = {
   },
 
   production: {
-    user: "pg",
+    users: "pg",
     connection: dbConnection,
     migrations: {
       directory: "./database/migrations"
