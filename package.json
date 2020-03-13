@@ -12,7 +12,7 @@
     "run-seeds": "knex seed:run ",
     "coverage": "jest --coverage --detectOpenHandles --forceExit || true"
   },
-	"jest": {
+  "jest": {
     "collectCoverageFrom": [
       "**/*.{js,jsx}",
       "!**/node_modules/**",
