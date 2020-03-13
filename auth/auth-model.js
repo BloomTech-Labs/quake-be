@@ -1,4 +1,4 @@
-const db = require('../data/dbConfig')
+const db = require('../database/dbConfig')
 module.exports = {
     add, 
     find,
@@ -8,22 +8,22 @@ module.exports = {
 }
 
 function find(username){
-    let query = db('user')
+    let query = db('users')
     if(username){
-        query = db('user').where({ username }).first()
+        query = db('users').where({ username }).first()
     }
     return query
 }
 function findById(id){
-    return db('user').where({id}).first()
+    return db('users').where({id}).first()
 }
-function add(user){
-    return db('user').insert(user)
+function add(users){
+    return db('users').insert(user)
 }
 function update(id, changes){
-    return db('user').update(changes).where({id})
+    return db('users').update(changes).where({id})
     
 }
 function remove(id){
-    return db('user').where({id}).del()
+    return db('users').where({id}).del()
 }

@@ -1,12 +1,12 @@
 const req = require('supertest')
-const db = require('../data/dbConfig')
+const db = require('../database/dbConfig')
 const server = require('../server')
 const Users = require('../auth/auth-model')
 
 
 beforeEach(async () => {
 
-    await db('user').truncate();
+    await db('users').truncate();
 });
 jest.setTimeout(1000 * 8);
 //#region  -- AUTH ROUTES --
@@ -19,7 +19,7 @@ describe('/auth/register ==> can register a user', () => {
             password: 'IAmIronMan'
         }
         //try and register a user
-        const res = await req(server).post('/auth/register').send(mock_user)
+        const res = await req(server).post('/api/auth/register').send(mock_user)
         //expect the status to be { 201 created }
         expect(res.status).toEqual(201)
     })
@@ -30,7 +30,7 @@ describe('/auth/register ==> can register a user', () => {
             password: 'IAmIronMan'
         }
         //try and register a user
-        const res = await req(server).post('/auth/register').send(mock_user)
+        const res = await req(server).post('/api/auth/register').send(mock_user)
         //expect the body of the response to be a confirm messege
         expect(res.body).toEqual({ messege: 'User Created Succesfully!' })
     })
@@ -46,7 +46,7 @@ describe('auth/login  ==> can login a user!', () => {
             password: 'IAmIronMan'
         }
         //FIRST:: try and register a user
-        let res = await req(server).post('/auth/register').send(mock_user)
+        let res = await req(server).post('/api/auth/register').send(mock_user)
         //expect the status to be { 201 created }
         expect(res.status).toEqual(201)
         //THEN:: try and login a user
@@ -54,7 +54,7 @@ describe('auth/login  ==> can login a user!', () => {
             username: 'IronMan',
             password: 'IAmIronMan'
         }
-        res = await req(server).post('/auth/login').send(mock_login)
+        res = await req(server).post('/api/auth/login').send(mock_login)
         //expect the status to be { 200 created }
         expect(res.status).toEqual(200)
     })
@@ -65,7 +65,7 @@ describe('auth/login  ==> can login a user!', () => {
             password: 'IAmIronMan'
         }
         //FIRST:: try and register a user
-        let res = await req(server).post('/auth/register').send(mock_user)
+        let res = await req(server).post('/api/auth/register').send(mock_user)
         //expect the status to be { 201 created }
         expect(res.status).toBe(201)
         //THEN:: try and login a user
