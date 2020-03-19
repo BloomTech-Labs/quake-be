@@ -4,19 +4,25 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const secrets = require("../config/secrets.js");
 
-const Users = require("../users/users-model.js")
+const Users = require("./auth-model.js")
 
 router.post("/register", (req, res) => {
-  let user = req.body;
-  const hash = bcrypt.hashSync(user.password, 10);
+  const user = req.body;
+  const hash = bcrypt.hashSync(user.password, 12);
   user.password = hash;
 
   Users.add(user)
     .then(saved => {
       // pass the created user into the genToken() method, and get the token
       const token = genToken(saved);
-      // return the user object, and the token.
-      res.status(201).json({ created_user: saved, token: token });
+      console.log(_user);
+      if (!_user) {
+          res.status(400).json({ messege: 'Something went wrong with the Registration' })
+      } else {
+        // return the user object, and the token.
+          res.status(201).json({ created_user: saved, token: token ,messege: 'User Created Succesfully!' })
+      }
+      
     })
     .catch(error => {
       res.status(500).json(error);
