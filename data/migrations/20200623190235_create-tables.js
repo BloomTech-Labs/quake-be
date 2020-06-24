@@ -1,6 +1,6 @@
 
-exports.up = function(knex) {
-    return knex.schema.createTable("activity", function(actions) {
+exports.up = function(knex, Promise) {
+    return knex.schema.createTable("activity", function(activity) {
         activity.increments();
         activity.string("usgs_id").notNullable();
         activity.decimal("longitude");
@@ -31,6 +31,7 @@ exports.up = function(knex) {
         activity.decimal("gap");
         activity.string("magType");
         activity.string("type");
+        activity.string("title");
     });
 };
 
