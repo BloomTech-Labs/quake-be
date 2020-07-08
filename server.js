@@ -8,4 +8,8 @@ server.use(helmet());
 server.use(express.json());
 server.use('/api/activity',ActivityRouter);
 
+server.get('/', (req, res) => {
+    res.status(201).json({ message: 'hello world' });
+});
+
 module.exports = server;
