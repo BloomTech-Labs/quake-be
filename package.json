@@ -7,6 +7,9 @@
     "test": "jest --detectOpenHandles --forceExit",
     "coverage": "jest --coverage --detectOpenHandles --forceExit || true"
   },
+  "engines": {
+      "node": "14.x"
+  },
 	"jest": {
     "collectCoverageFrom": [
       "**/*.js",
