@@ -27,9 +27,6 @@ exports.seed = function(knex) {
                 "magType": "ml",
                 "type": "earthquake",
                 "title": "M 1.1 - 22km E of Julian, CA",
-                "longitude": -116.3691635,
-                "latitude":33.059833500000003,
-                "depth":14.369999999999999,
                 "usgs_id": "ci39492872"
         },
         {
@@ -59,9 +56,6 @@ exports.seed = function(knex) {
                 "magType": "ml",
                 "type": "earthquake",
                 "title": "M 1.4 - 11km WNW of Anza, CA",
-                "longitude": -116.3691635,
-                "latitude":33.059833500000003,
-                "depth":14.369999999999999,
                 "usgs_id": "ci39492864"
         }
     ]);
