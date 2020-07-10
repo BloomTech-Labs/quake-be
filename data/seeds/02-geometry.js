@@ -16,7 +16,7 @@ exports.seed = function(knex) {
                 33.4768333,
                 6.84
             ]`,
-            "usgs_id": "ci39492872"
+            "usgs_id": "ci39492864"
         }
     ]);
 };
