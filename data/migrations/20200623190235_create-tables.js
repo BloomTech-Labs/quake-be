@@ -1,11 +1,9 @@
 
 exports.up = function(knex, Promise) {
-    return knex.schema.createTable("activity", function(activity) {
+    return knex.schema
+    .createTable("activity", activity=> {
         activity.increments();
-        activity.string("usgs_id").notNullable();
-        activity.decimal("longitude");
-        activity.decimal("latitude");
-        activity.decimal("depth");
+        activity.string("usgs_id")
         activity.decimal("mag");
         activity.string("place");
         activity.bigInteger("time");
@@ -32,9 +30,20 @@ exports.up = function(knex, Promise) {
         activity.string("magType");
         activity.string("type");
         activity.string("title");
-    });
+    })
+
+    .createTable("geometry", geometry=>{
+        geometry.increments();
+        geometry.string("type");
+        geometry.string("coordinates");
+        geometry.string("usgs_id")
+            .notNullable()
+            .references('usgs_id').inTable('activity');
+    })
 };
 
 exports.down = function(knex) {
-    return knex.schema.dropTableIfExists("activity");
+    return knex.schema
+        .dropTableIfExists("activity")
+        .dropTableIfExists("geometry")
 };

@@ -50,6 +50,9 @@ web_modules/
 # Optional npm cache directory
 .npm
 
+# Ignore Databases
+.db3
+
 # Optional eslint cache
 .eslintcache
 
