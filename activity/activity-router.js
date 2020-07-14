@@ -9,56 +9,29 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   let features = await Activity.findActivity()
     try {
-    // .then(async (features) => {
-    let quakedata = [];
-     let ax =  features.map( async (feature) => {
-        // --- For Each Feature
+     let newQuakes =  features.map( async (feature) => {
+        // --- For Each Feature (Earthquake)
         let featureComplete = {...feature};
+        // Finding and assigning new geometry to each earthquake.
         let geo = await Activity.findGeometry(feature.usgs_id)
-        // --- Find the corresponding geometry
-        console.log("this is quakedata", quakedata);
-         featureComplete = { ...feature, geometry: geo[0] };
-
-         console.log(featureComplete,"FEATURE COMP")
-         return featureComplete
-
-
-        // return quakedata.push(featureComplete);
-        // arr.push(featureComplete);
-
-        // .then(async (geo) => {
-            // 0 index to return object instead of array
-            //spread operator to insert geometry object into the array item.Activity
-            // --- Append the feature with the found geometry
-        // });
-        // --- insert the completed feature into the quakedata array
-        // console.log(arr,"ARR")
-        // return arr
-        
+        //Assigning feature complete the new quake properties... 
+        featureComplete = { 
+          ...feature, 
+          geometry: geo[0]        
+        };
+        // We need this line to parse the coordinates back into an array.
+        featureComplete.geometry.coordinates = JSON.parse(geo[0].coordinates);
+        return featureComplete
       });
-     let tst = await Promise.allSettled(ax)
-      console.log("this is OUTSIDE", ax,tst);
-
-       res.json({qd: tst});
-    
+    //Resolving promises and returning data.
+    let quakeData = await Promise.allSettled(newQuakes)
+    res.json({quakeData});
+  } 
   
-  
-  
-  
-  
-  } catch (error) {
-
-    //push for each quake, [{quake 1}, {quake 2}]
-    //each of which has push for properties, geometry, id [{properties{}, geometry{}, id{}}, {properties{}, geometry{}, id{}}]
-  // })
-  // .catch((err) => {
+  catch (error) {
     console.log(error.message)
-
     res.status(500).json({ message: "Failed to get quakes" });
-
-    
   }
-    // });
 });
 
   module.exports = router;
