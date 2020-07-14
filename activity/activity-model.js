@@ -6,12 +6,36 @@ function findActivity() {
         .select("*")
 };
 
+function getById(id) {
+    return db('activity')
+      .where({ id })
+      .first();
+  }
+
 function findGeometry(id) {
     return db("geometry as g")
     .where("usgs_id", id)
 };
 
+function addActivity(activityData) {
+    return db('activity')
+    .insert(activityData)
+    .then(ids => {
+      return getById(ids[0]);
+    });
+}
+
+function addGeometry(geometryData){
+    return db('geometry')
+    .insert(geometryData)
+    .then(ids=>{
+        return getById(ids[0]);
+    });
+}
+
 module.exports = {
     findActivity,
     findGeometry,
+    addActivity,
+    addGeometry,
 };
