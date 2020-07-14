@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 
 const Activity = require('./activity-model.js');
 
@@ -31,6 +32,27 @@ router.get("/", async (req, res) => {
   catch (error) {
     console.log(error.message)
     res.status(500).json({ message: "Failed to get quakes" });
+  }
+});
+
+
+router.post("/quakeupdates", (req, res) => {
+  axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=2')
+  .then(response=>{
+    let newFeatures=response.data.features.map(feature=>{
+      console.log("this is feature",feature.properties)
+      console.log("this is geometry", feature.geometry)
+      feature.properties.usgs_id=feature.id;
+      feature.geometry.usgs_id=feature.id
+      feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
+      Activity.addActivity(feature.properties)
+      Activity.addGeometry(feature.geometry)
+    })
+    res.json("quakes added!");
+  
+  })
+  .catch(error){
+    res.status(500).json({message: "Failed to add quakes :(" })
   }
 });
 

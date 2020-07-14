@@ -5,7 +5,7 @@ const axios = require('axios');
 const PORT = process.env.PORT || 5001;
 
 // cron.schedule('*/10 * * * * *', () => {
-//   console.log('running a task every minute');
+//   console.log('running a task every ten seconds');
 //   axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=2')
 //   .then(response=>console.log(response.data))
 //   .catch(error=>console.log(error))
