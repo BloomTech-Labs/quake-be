@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
 });
 
 cron.schedule('*/10 * * * * *', () => {
-    axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=3')
+    axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=50')
     .then(async response=>{
       const countEx = await Activity.countRecords()
       const countExisting = countEx[Object.keys(countEx)[0]]
