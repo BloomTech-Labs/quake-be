@@ -2,6 +2,8 @@ const express = require('express');
 const axios = require('axios');
 
 const Activity = require('./activity-model.js');
+const cron = require('node-cron');
+
 
 
 const router = express.Router();
@@ -36,40 +38,37 @@ router.get("/", async (req, res) => {
   }
 });
 
+cron.schedule('*/10 * * * * *', () => {
+    axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=3')
+    .then(async response=>{
+      const countEx = await Activity.countRecords()
+      const countExisting = countEx[Object.keys(countEx)[0]]
+      const countRes = response.data.features.length;
 
-router.post("/quakeupdates", (req, res) => {
-  axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=2')
-  .then(async response=>{
+      if (countRes == countExisting) {
+        console.log('same number of records in response as in db') //therefore do nothing
+      } else {
+        console.log('different number of records in response as in db')
+        //wipe existing table
+        const num1 = await Activity.delAllRecords('activity')
+        console.log('activity', num1)
+        const num2 = await Activity.delAllRecords('geometry')
+        console.log('geometry', num2)
+        //add new response to table
 
-    const countEx = await Activity.countRecords()
-    const countExisting = countEx[Object.keys(countEx)[0]]
-    const countRes = response.data.features.length;
-
-    if (countRes == countExisting) {
-      console.log('same number of records in response as in db') //therefore do nothing
-    } else {
-      console.log('different number of records in response as in db')
-      //wipe existing table
-      const num = await Activity.delAllRecords()
-      console.log('num', num)
-      //add new response to table
-
-      let newFeatures=response.data.features.map(feature=>{ 
-        feature.properties.usgs_id=feature.id;
-        feature.geometry.usgs_id=feature.id
-        feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
-        Activity.addActivity(feature.properties)
-        Activity.addGeometry(feature.geometry)
-      }
-    )}
-
-    
-    res.json("quakes added!");
-  
-  })
-  .catch(error=>{
-    res.status(500).json({message: "Failed to add quakes :(" })
-  })
+        let newFeatures=response.data.features.map(feature=>{ 
+          feature.properties.usgs_id=feature.id;
+          feature.geometry.usgs_id=feature.id
+          feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
+          Activity.addActivity(feature.properties)
+          Activity.addGeometry(feature.geometry)
+        }
+      )}    
+    })
+    .catch(error=>{
+      res.status(500).json({message: "Failed to add quakes :(" })
+    });
 });
+
 
   module.exports = router;

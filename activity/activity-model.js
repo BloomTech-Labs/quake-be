@@ -16,9 +16,8 @@ function countRecords() {
     return db('activity').count('usgs_id').first()
 }
 
-function delAllRecords() {
-    return db('activity')
-    .del()
+function delAllRecords(tableName) {
+    return db(tableName).del()
 }
 
 function findGeometry(id) {
