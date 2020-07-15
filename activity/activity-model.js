@@ -16,6 +16,11 @@ function countRecords() {
     return db('activity').count('usgs_id').first()
 }
 
+function delAllRecords() {
+    return db('activity')
+    .del()
+}
+
 function findGeometry(id) {
     return db("geometry as g")
     .where("usgs_id", id)
@@ -43,4 +48,5 @@ module.exports = {
     addActivity,
     addGeometry,
     countRecords,
+    delAllRecords,
 };
