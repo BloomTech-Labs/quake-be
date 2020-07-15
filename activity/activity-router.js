@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const Activity = require('./activity-model.js');
 
+
 const router = express.Router();
 
 // '/api/activity'
@@ -38,22 +39,33 @@ router.get("/", async (req, res) => {
 
 router.post("/quakeupdates", (req, res) => {
   axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=2')
-  .then(response=>{
-    let newFeatures=response.data.features.map(feature=>{
-      console.log("this is feature",feature.properties)
-      console.log("this is geometry", feature.geometry)
+  .then(async response=>{
+    const countRes = response.data.features.length;
+    let newFeatures=response.data.features.map(feature=>{ 
       feature.properties.usgs_id=feature.id;
       feature.geometry.usgs_id=feature.id
       feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
       Activity.addActivity(feature.properties)
       Activity.addGeometry(feature.geometry)
     })
+
+    const countEx = await Activity.countRecords()
+    const countExisting = countEx[Object.keys(countEx)[0]]
+    if (countRes == countExisting) {
+      console.log('same number of records in response as in db') //therefore do nothing
+    } else {
+      console.log('different number of records in response as in db')
+      //wipe existing table
+      //add new response to table
+    }
+
+
     res.json("quakes added!");
   
   })
-  .catch(error){
+  .catch(error=>{
     res.status(500).json({message: "Failed to add quakes :(" })
-  }
+  })
 });
 
   module.exports = router;
