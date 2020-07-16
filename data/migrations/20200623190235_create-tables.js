@@ -3,7 +3,7 @@ exports.up = function(knex, Promise) {
     return knex.schema
     .createTable("activity", activity=> {
         activity.increments();
-        activity.string("usgs_id")
+        activity.string("usgs_id").unique();
         activity.decimal("mag");
         activity.string("place");
         activity.bigInteger("time");
@@ -37,13 +37,13 @@ exports.up = function(knex, Promise) {
         geometry.string("type");
         geometry.string("coordinates");
         geometry.string("usgs_id")
-            .notNullable()
-            .references('usgs_id').inTable('activity');
+            .notNullable().unique()
+            .references('usgs_id').inTable('activity')
     })
 };
 
 exports.down = function(knex) {
     return knex.schema
-        .dropTableIfExists("activity")
-        .dropTableIfExists("geometry")
+    .dropTableIfExists("geometry")
+    .dropTableIfExists("activity")
 };
