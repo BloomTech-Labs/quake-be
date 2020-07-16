@@ -12,8 +12,8 @@ function getById(id) {
       .first();
   }
 
-function countRecords() {
-    return db('activity').count('usgs_id').first()
+function countRecords(tableName) {
+    return db(tableName).count('usgs_id').first()
 }
 
 function delAllRecords(tableName) {
@@ -25,16 +25,16 @@ function findGeometry(id) {
     .where("usgs_id", id)
 };
 
-function addActivity(activityData) {
-    return db('activity')
+function addActivity(activityData, tableName) {
+    return db(tableName)
     .insert(activityData)
     .then(ids => {
       return getById(ids[0]);
     });
 }
 
-function addGeometry(geometryData){
-    return db('geometry')
+function addGeometry(geometryData, tableName){
+    return db(tableName)
     .insert(geometryData)
     .then(ids=>{
         return getById(ids[0]);
