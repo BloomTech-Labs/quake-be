@@ -7,6 +7,16 @@ const cron = require('node-cron');
 // '/api/activity'
 const router = express.Router();
 
+// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=100&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
+
+
+//top 10 all time biggest
+// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=10&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
+
+//top 30 in last 7 days
+// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
+
+
 
 // '/api/activity/first-load
 router.get("/first-load", async (req, res) => {
@@ -39,36 +49,70 @@ router.get("/first-load", async (req, res) => {
 
 //first-load cron job
 cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
-    axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30')
+  
+  //get latest from DB
+  Activity.checksum('activity').then(res => {
+    const arrayValues = res.map(a=> a.usgs_id)
+    const dbChecksum = JSON.stringify(arrayValues) //create the checksum for DB items
+    // console.log(dbChecksum)
+
+    //Get the params for query ready
+    //Dates
+    var today = new Date();
+    const ymd = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+    const sevenDays = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()-7}`;
+    // console.log('current date:', ymd);
+    // console.log('7 days ago:', sevenDays);
+    const starttime = sevenDays;
+    const endtime = ymd;
+
+    //Other params
+    const minmagnitude = 0
+    const maxmagnitude = 15
+    const maxradiuskm = 5000
+    const latitude = 37.78197
+    const longitude = -121.93992
+  
+    //Use params to get latest from USGS
+    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
     .then(async response=>{
-      const countEx = await Activity.countRecords('activity')
-      const countExisting = countEx[Object.keys(countEx)[0]]
-      const countRes = response.data.features.length;
+      const resUnsortedValues = response.data.features.map(a => a.id)
+      const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
+      const resChecksum = JSON.stringify(resValues) //create the checksum for the latest items from USGS
+      // console.log(resChecksum)
+    
+      //check if changed
+      const compared = dbChecksum.localeCompare(resChecksum) //compare the two checksum strings 0=same, 1 or -1 if different(shows sort order)
+      console.log('checksum result:', compared)
 
-      if (countRes == countExisting) {
-        console.log('first-load: same number of records in response as in db, nothing to change in DB') //therefore do nothing
+      if (compared == 0){
+        console.log('first-load: nothing to change in DB, checksum of DB **MATCHES** checksum of latest from USGS') //therefore do nothing
       } else {
-        console.log('first-load: different number of records in response as in db, writing new DB')
-        //wipe existing table
-        const num2 = await Activity.delAllRecords('geometry')
-        console.log('geometry', num2)
-        const num1 = await Activity.delAllRecords('activity')
-        console.log('activity', num1)
+        console.log('first-load: writing new DB, checksum of latest from USGS is **DIFFERENT** from checksum of DB') //therefore change it up!
+         //wipe existing table
+         const geoWipe = await Activity.delAllRecords('geometry') //wipe them in same order as migration rollback
+         console.log('geometry', geoWipe)
+         const activityWipe = await Activity.delAllRecords('activity')
+         console.log('activity', activityWipe)
 
-        //add new response to table
+         //add new response to table
+         console.log('first-load: adding new activity to DB')
         let newFeatures=response.data.features.map(feature=>{ 
           feature.properties.usgs_id=feature.id;
           feature.geometry.usgs_id=feature.id
           feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
           Activity.addActivity(feature.properties, 'activity')
           Activity.addGeometry(feature.geometry, 'geometry')
-        }
-      )}    
+        })
+      }
     })
     .catch(error=>{
-      res.status(500).json({message: "Failed to add quakes :(" })
+      console.log(error)
     });
+  })
 });
+
+
 
 // '/api/activity/alltime-biggest
 router.get("/alltime-biggest", async (req, res) => {
@@ -101,36 +145,67 @@ router.get("/alltime-biggest", async (req, res) => {
 
 //all time biggest cron job
 cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
-  axios.get('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30')
-  .then(async response=>{
-    const countEx = await Activity.countRecords('all_time')
-    const countExisting = countEx[Object.keys(countEx)[0]]
-    const countRes = response.data.features.length;
+  console.log('all time running')
+  //get latest from DB
+  Activity.checksum('all_time').then(res => {
+    const arrayValues = res.map(a=> a.usgs_id)
+    const dbChecksum = JSON.stringify(arrayValues) //create the checksum for DB items
+    // console.log(dbChecksum)
 
-    if (countRes == countExisting) {
-      console.log('alltime-biggest: same number of records in response as in db, nothing to change in DB') //therefore do nothing
-    } else {
-      console.log('alltime-biggest: different number of records in response as in db, writing new DB') //therefore write new db
-      //wipe existing table
-      const num2 = await Activity.delAllRecords('geometry_all_time')
-      console.log('geometry', num2)
-      const num1 = await Activity.delAllRecords('all_time')
-      console.log('activity', num1)
+    //Get the params for query ready
+    //Dates
+    var today = new Date();
+    const ymd = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+    // console.log('current date:', ymd);
+    // console.log('7 days ago:', sevenDays);
+    const starttime = '1880-01-01';
+    const endtime = ymd;
 
-      //add new response to table
+    //Other params
+    const minmagnitude = 7
+    const maxmagnitude = 15
+    const maxradiuskm = 5000
+    const latitude = 37.78197
+    const longitude = -121.93992
+    //top 100
+  
+    //Use params to get latest from USGS
+    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=20&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
+    .then(async response=>{
+      const resUnsortedValues = response.data.features.map(a => a.id)
+      const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
+      const resChecksum = JSON.stringify(resValues) //create the checksum for the latest items from USGS
+      console.log(resChecksum)
+    
+      //check if changed
+      const compared = dbChecksum.localeCompare(resChecksum) //compare the two checksum strings 0=same, 1 or -1 if different(shows sort order)
+      console.log('checksum result:', compared)
 
-      let newFeatures=response.data.features.map(feature=>{ 
-        feature.properties.usgs_id=feature.id;
-        feature.geometry.usgs_id=feature.id
-        feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
-        Activity.addActivity(feature.properties, 'all_time')
-        Activity.addGeometry(feature.geometry, 'geometry_all_time')
+      if (compared == 0){
+        console.log('alltime-biggest: nothing to change in DB, checksum of DB **MATCHES** checksum of latest from USGS') //therefore do nothing
+      } else {
+        console.log('alltime-biggest: writing new DB, checksum of latest from USGS is **DIFFERENT** from checksum of DB') //therefore change it up!
+         //wipe existing table
+         const geo_all_timeWipe = await Activity.delAllRecords('geometry_all_time') //wipe them in same order as migration rollback
+         console.log('geometry_all_time table wiped', geo_all_timeWipe)
+         const all_timeWipe = await Activity.delAllRecords('all_time')
+         console.log('all_time table wiped', all_timeWipe)
+
+         //add new response to table
+         console.log('all_time: adding new activity to DB')
+        let newFeatures=response.data.features.map(feature=>{ 
+          feature.properties.usgs_id=feature.id;
+          feature.geometry.usgs_id=feature.id
+          feature.geometry.coordinates=JSON.stringify(feature.geometry.coordinates)
+          Activity.addActivity(feature.properties, 'all_time')
+          Activity.addGeometry(feature.geometry, 'geometry_all_time')
+        })
       }
-    )}    
+    })
+    .catch(error=>{
+      console.log(error)
+    });
   })
-  .catch(error=>{
-    res.status(500).json({message: "Failed to add quakes :(" })
-  });
 });
 
   module.exports = router;

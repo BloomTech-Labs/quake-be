@@ -16,6 +16,12 @@ function countRecords(tableName) {
     return db(tableName).count('usgs_id').first()
 }
 
+function checksum(tableName) {
+    return db(tableName)
+        .select('usgs_id')
+        .orderBy('usgs_id', 'asc') // sort asc, important to compare checksums!
+}
+
 function delAllRecords(tableName) {
     return db(tableName).del()
 }
@@ -48,4 +54,5 @@ module.exports = {
     addGeometry,
     countRecords,
     delAllRecords,
+    checksum,
 };
