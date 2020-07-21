@@ -20,13 +20,13 @@ const router = express.Router();
 
 // '/api/activity/first-load
 router.get("/first-load", async (req, res) => {
-  let features = await Activity.findActivity()
+  let features = await Activity.findActivity('activity')
     try {
      let newQuakes =  features.map( async (feature) => {
         // --- For Each Feature (Earthquake)
         let featureComplete = {...feature};
         // Finding and assigning new geometry to each earthquake.
-        let geo = await Activity.findGeometry(feature.usgs_id)
+        let geo = await Activity.findGeometry('geometry', feature.usgs_id)
         //Assigning feature complete the new quake properties... 
         featureComplete = { 
           ...feature, 
@@ -116,13 +116,13 @@ cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
 
 // '/api/activity/alltime-biggest
 router.get("/alltime-biggest", async (req, res) => {
-  let features = await Activity.findActivity()
+  let features = await Activity.findActivity('all_time')
     try {
      let newQuakes =  features.map( async (feature) => {
         // --- For Each Feature (Earthquake)
         let featureComplete = {...feature};
         // Finding and assigning new geometry to each earthquake.
-        let geo = await Activity.findGeometry(feature.usgs_id)
+        let geo = await Activity.findGeometry('geometry_all_time', feature.usgs_id)
         //Assigning feature complete the new quake properties... 
         featureComplete = { 
           ...feature, 
