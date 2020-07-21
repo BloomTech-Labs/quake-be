@@ -32,7 +32,7 @@ router.get("/first-load", async (req, res) => {
           ...feature, 
           geometry: geo[0]        
         };
-        // We need this line to parse the coordinates back into an array.
+        //We need this line to parse the coordinates back into an array.
         featureComplete.geometry.coordinates = JSON.parse(geo[0].coordinates);
         return featureComplete
       });
