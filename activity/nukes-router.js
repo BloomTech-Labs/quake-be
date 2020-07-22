@@ -82,10 +82,10 @@ cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
            const nukesGeoWipe = await Activity.delAllRecords('geometry_nukes') //wipe them in same order as migration rollback
            console.log('geometry_nukes table wiped', nukesGeoWipe)
            const nukesWipe = await Activity.delAllRecords('nukes')
-           console.log('all_time table wiped', nukesWipe)
+           console.log('nukes wiped', nukesWipe)
   
            //add new response to table
-           console.log('all_time: adding new activity to DB')
+           console.log('nukes: adding new activity to DB')
           let newFeatures=response.data.features.map(feature=>{ 
             feature.properties.usgs_id=feature.id;
             feature.geometry.usgs_id=feature.id
