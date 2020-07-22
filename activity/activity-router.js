@@ -10,8 +10,8 @@ const router = express.Router();
 // https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=100&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
 
 
-//top 10 all time biggest
-// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=10&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
+//top 20 all time biggest
+// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=20&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
 
 //top 30 in last 7 days
 // https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
@@ -32,7 +32,7 @@ router.get("/first-load", async (req, res) => {
           ...feature, 
           geometry: geo[0]        
         };
-        // We need this line to parse the coordinates back into an array.
+        //We need this line to parse the coordinates back into an array.
         featureComplete.geometry.coordinates = JSON.parse(geo[0].coordinates);
         return featureComplete
       });
@@ -164,13 +164,13 @@ cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
     //Other params
     const minmagnitude = 7
     const maxmagnitude = 15
-    const maxradiuskm = 5000
+    const maxradiuskm = 20000
     const latitude = 37.78197
     const longitude = -121.93992
     //top 100
   
     //Use params to get latest from USGS
-    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=20&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
+    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=10&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
     .then(async response=>{
       const resUnsortedValues = response.data.features.map(a => a.id)
       const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
