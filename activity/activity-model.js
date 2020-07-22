@@ -1,7 +1,7 @@
 const db = require('../data/db-config');
 
-function findActivity() {
-    return db('activity')
+function findActivity(tableName) {
+    return db(tableName)
         // .join("geometry", "geometry.usgs_id", "activity.usgs_id")
         .select("*")
 };
@@ -26,8 +26,8 @@ function delAllRecords(tableName) {
     return db(tableName).del()
 }
 
-function findGeometry(id) {
-    return db("geometry as g")
+function findGeometry(tableName,id) {
+    return db(tableName)
     .where("usgs_id", id)
 };
 
