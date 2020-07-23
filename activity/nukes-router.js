@@ -26,8 +26,8 @@ router.get("/boom", async (req, res) => {
           return featureComplete
         });
       //Resolving promises and returning data.
-      let quakeData = await Promise.allSettled(newQuakes)
-      res.json({quakeData});
+      let feature = await Promise.allSettled(newQuakes)
+      res.json({feature});
     } 
     
     catch (error) {

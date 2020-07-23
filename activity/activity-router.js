@@ -24,12 +24,12 @@ router.get("/first-load", async (req, res) => {
     try {
      let newQuakes =  features.map( async (feature) => {
         // --- For Each Feature (Earthquake)
-        let featureComplete = {...feature};
+        let featureComplete = {};
         // Finding and assigning new geometry to each earthquake.
         let geo = await Activity.findGeometry('geometry', feature.usgs_id)
         //Assigning feature complete the new quake properties... 
         featureComplete = { 
-          ...feature, 
+          properties:feature,
           geometry: geo[0]        
         };
         //We need this line to parse the coordinates back into an array.
@@ -37,8 +37,15 @@ router.get("/first-load", async (req, res) => {
         return featureComplete
       });
     //Resolving promises and returning data.
-    let quakeData = await Promise.allSettled(newQuakes)
-    res.json({quakeData});
+    let upgraded = await Promise.allSettled(newQuakes)
+    const feature = upgraded.map(newFeature=>{
+      newFeature.properties=newFeature.value.properties;
+      newFeature.geometry=newFeature.value.geometry;
+      delete newFeature.value;
+      delete newFeature.status;
+      return newFeature
+    })
+    res.json({feature});
   } 
   
   catch (error) {
@@ -133,8 +140,8 @@ router.get("/alltime-biggest", async (req, res) => {
         return featureComplete
       });
     //Resolving promises and returning data.
-    let quakeData = await Promise.allSettled(newQuakes)
-    res.json({quakeData});
+    let feature = await Promise.allSettled(newQuakes)
+    res.json({feature});
   } 
   
   catch (error) {
