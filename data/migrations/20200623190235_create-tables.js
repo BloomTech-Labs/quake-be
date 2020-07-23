@@ -79,7 +79,7 @@ exports.up = function(knex, Promise) {
             .notNullable().unique()
             .references('usgs_id').inTable('all_time')
     })
-    .createTable("tsunami", activity=> {
+    .createTable("nukes", activity=> {
         activity.increments();
         activity.string("usgs_id").unique();
         activity.decimal("mag");
@@ -110,7 +110,7 @@ exports.up = function(knex, Promise) {
         activity.string("title");
     })
 
-    .createTable("geometry_tsunami", geometry=>{
+    .createTable("geometry_nukes", geometry=>{
         geometry.increments();
         geometry.string("type");
         geometry.string("coordinates");
@@ -118,10 +118,16 @@ exports.up = function(knex, Promise) {
             .notNullable().unique()
             .references('usgs_id').inTable('activity')
     })
+
+    // .createTable("tsunami", activity=> {
+
+    //     .createTable("geometry_tsunami", geometry=>{
 };
 
 exports.down = function(knex) {
     return knex.schema
+    .dropTableIfExists("geometry_nukes")
+    .dropTableIfExists("nukes")
     .dropTableIfExists("geometry_all_time")
     .dropTableIfExists("all_time")
     .dropTableIfExists("geometry")
