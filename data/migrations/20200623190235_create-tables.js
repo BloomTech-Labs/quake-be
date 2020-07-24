@@ -126,6 +126,7 @@ exports.up = function(knex, Promise) {
         activity.bigInteger("updated");
         activity.integer("tz");
         activity.string("url");
+        activity.string("wiki");
         activity.string("detail");
         activity.integer("felt");
         activity.decimal("cdi");
