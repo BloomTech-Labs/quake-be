@@ -117,6 +117,9 @@ cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
       console.log(error)
     });
   })
+  .catch(error => {
+      console.log(error)
+  })
 });
 
 
