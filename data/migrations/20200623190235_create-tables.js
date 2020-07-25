@@ -154,7 +154,7 @@ exports.up = function(knex, Promise) {
         geometry.string("coordinates");
         geometry.string("usgs_id")
             .notNullable().unique()
-            .references('usgs_id').inTable('activity')
+            .references('usgs_id').inTable('tsunami')
     })
 };
 
