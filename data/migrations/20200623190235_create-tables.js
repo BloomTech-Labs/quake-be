@@ -1,5 +1,5 @@
 
-exports.up = function(knex, Promise) {
+exports.up = function(knex) {
     return knex.schema
     .createTable("activity", activity=> {
         activity.increments();
@@ -115,7 +115,7 @@ exports.up = function(knex, Promise) {
         geometry.string("coordinates");
         geometry.string("usgs_id")
             .notNullable().unique()
-            .references('usgs_id').inTable('activity')
+            .references('usgs_id').inTable('nukes')
     })
     .createTable("tsunami", activity=> {
         activity.increments();
@@ -126,6 +126,7 @@ exports.up = function(knex, Promise) {
         activity.bigInteger("updated");
         activity.integer("tz");
         activity.string("url");
+        activity.string("wiki");
         activity.string("detail");
         activity.integer("felt");
         activity.decimal("cdi");
@@ -153,7 +154,7 @@ exports.up = function(knex, Promise) {
         geometry.string("coordinates");
         geometry.string("usgs_id")
             .notNullable().unique()
-            .references('usgs_id').inTable('activity')
+            .references('usgs_id').inTable('tsunami')
     })
 };
 
