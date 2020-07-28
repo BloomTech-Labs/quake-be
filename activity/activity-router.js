@@ -20,9 +20,9 @@ const router = express.Router();
 
 // '/api/activity/first-load
 router.get("/first-load", async (req, res) => {
-  let features = await Activity.findActivity('activity')
+  let quakeFeatures = await Activity.findActivity('activity')
     try {
-     let newQuakes =  features.map( async (feature) => {
+     let newQuakes =  quakeFeatures.map( async (feature) => {
         // --- For Each Feature (Earthquake)
         let featureComplete = {};
         // Finding and assigning new geometry to each earthquake.
@@ -38,14 +38,14 @@ router.get("/first-load", async (req, res) => {
       });
     //Resolving promises and returning data.
     let upgraded = await Promise.allSettled(newQuakes)
-    const feature = upgraded.map(newFeature=>{
+    const features = upgraded.map(newFeature=>{
       newFeature.properties=newFeature.value.properties;
       newFeature.geometry=newFeature.value.geometry;
       delete newFeature.value;
       delete newFeature.status;
       return newFeature
     })
-    res.json({feature});
+    res.json({features});
   } 
   
   catch (error) {
@@ -126,16 +126,16 @@ cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
 
 // '/api/activity/alltime-biggest
 router.get("/alltime-biggest", async (req, res) => {
-  let features = await Activity.findActivity('all_time')
+  let quakeFeatures = await Activity.findActivity('all_time')
     try {
-     let newQuakes =  features.map( async (feature) => {
+     let newQuakes =  quakeFeatures.map( async (feature) => {
         // --- For Each Feature (Earthquake)
-        let featureComplete = {...feature};
+        let featureComplete = {};
         // Finding and assigning new geometry to each earthquake.
         let geo = await Activity.findGeometry('geometry_all_time', feature.usgs_id)
         //Assigning feature complete the new quake properties... 
         featureComplete = { 
-          ...feature, 
+          properties:feature, 
           geometry: geo[0]        
         };
         // We need this line to parse the coordinates back into an array.
@@ -143,8 +143,15 @@ router.get("/alltime-biggest", async (req, res) => {
         return featureComplete
       });
     //Resolving promises and returning data.
-    let feature = await Promise.allSettled(newQuakes)
-    res.json({feature});
+    let upgraded = await Promise.allSettled(newQuakes)
+    const features = upgraded.map(newFeature=>{
+      newFeature.properties=newFeature.value.properties;
+      newFeature.geometry=newFeature.value.geometry;
+      delete newFeature.value;
+      delete newFeature.status;
+      return newFeature
+    })
+    res.json({features});
   } 
   
   catch (error) {

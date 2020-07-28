@@ -9,16 +9,16 @@ const router = express.Router();
 
 // '/api/nukes/boom
 router.get("/boom", async (req, res) => {
-    let features = await Activity.findActivity('nukes')
+    let quakeFeatures = await Activity.findActivity('nukes')
       try {
-       let newQuakes =  features.map( async (feature) => {
+       let newQuakes =  quakeFeatures.map( async (feature) => {
           // --- For Each Feature (Earthquake)
-          let featureComplete = {...feature};
+          let featureComplete = {};
           // Finding and assigning new geometry to each earthquake.
           let geo = await Activity.findGeometry('geometry_nukes', feature.usgs_id)
           //Assigning feature complete the new quake properties... 
           featureComplete = { 
-            ...feature, 
+            properties:feature, 
             geometry: geo[0]        
           };
           //We need this line to parse the coordinates back into an array.
@@ -26,8 +26,15 @@ router.get("/boom", async (req, res) => {
           return featureComplete
         });
       //Resolving promises and returning data.
-      let feature = await Promise.allSettled(newQuakes)
-      res.json({feature});
+      let upgraded = await Promise.allSettled(newQuakes)
+      const features = upgraded.map(newFeature=>{
+      newFeature.properties=newFeature.value.properties;
+      newFeature.geometry=newFeature.value.geometry;
+      delete newFeature.value;
+      delete newFeature.status;
+      return newFeature
+    })
+    res.json({features});
     } 
     
     catch (error) {
