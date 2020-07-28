@@ -76,7 +76,7 @@ cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
     //Other params
     const minmagnitude = 0
     const maxmagnitude = 15
-    const maxradiuskm = 5000
+    const maxradiuskm = 20000
     const latitude = 37.78197
     const longitude = -121.93992
   
