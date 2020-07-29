@@ -6,6 +6,8 @@ const server = express();
 const ActivityRouter = require('./activity/activity-router')
 const NukesRouter = require('./activity/nukes-router')
 const TsunamiRouter = require('./activity/tsunami-router')
+const RefreshRouter = require('./activity/refresh-router')
+
 
 
 server.use(helmet());
@@ -14,6 +16,8 @@ server.use(cors());
 server.use('/api/activity',ActivityRouter);
 server.use('/api/nukes', NukesRouter);
 server.use('/api/tsunami', TsunamiRouter);
+server.use('/api/refresh', RefreshRouter);
+
 
 
 server.get('/', (req, res) => {
