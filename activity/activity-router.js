@@ -161,7 +161,9 @@ router.get("/alltime-biggest", async (req, res) => {
 });
 
 //all time biggest cron job
-cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
+// cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
+cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
+
   console.log('all time running')
   //get latest from DB
   Activity.checksum('all_time').then(res => {
