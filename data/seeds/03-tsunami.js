@@ -1,7 +1,6 @@
 exports.seed = function(knex) {
     return knex('tsunami').insert([
         {
-                "id": 3,
                 "usgs_id": "official20110311054624120_30",
                 "mag": 9.1,
                 "place": "2011 Great Tohoku Earthquake, Japan",
@@ -31,5 +30,35 @@ exports.seed = function(knex) {
                 "type": "earthquake",
                 "title": "M 9.1 - 2011 Great Tohoku Earthquake, Japan",
         },
+        {
+            "usgs_id": "official20110311054624120_31",
+            "mag": 9.1,
+            "place": "2011 Great Tohoku Earthquake, Japan",
+            "time": 1299822384120,
+            "updated": 1594161746661,
+            "tz": 540,
+            "url": "https://earthquake.usgs.gov/earthquakes/eventpage/official20110311054624120_30",
+            "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=official20110311054624120_30&format=geojson",
+            "wiki": "https://en.wikipedia.org/wiki/2011_T%C5%8Dhoku_earthquake_and_tsunami",
+            "felt": 1357,
+            "cdi": 9.1,
+            "mmi": 8.18,
+            "alert": null,
+            "status": "reviewed",
+            "tsunami": 0,
+            "sig": 2184,
+            "net": "official",
+            "code": "20110311054624120_30",
+            "ids": ",usc0001xgp,usp000hvnu,choy20110311054623,official20110311054624120_30,duputel201103110546a,atlas20110311054624,iscgem16461282,",
+            "sources": ",us,us,choy,official,duputel,atlas,iscgem,",
+            "types": ",associate,dyfi,finite-fault,focal-mechanism,general-header,general-link,general-text,geoserve,impact-text,moment-tensor,origin,phase-data,poster,scitech-link,scitech-text,shakemap,trump-impact-text,trump-origin,trump-phase-data,trump-shakemap,",
+            "nst": 541,
+            "dmin": null,
+            "rms": 1.16,
+            "gap": 9.5,
+            "magType": "mww",
+            "type": "earthquake",
+            "title": "M 9.1 - 2011 Great Tohoku Earthquake, Japan",
+    },
     ]);
   };

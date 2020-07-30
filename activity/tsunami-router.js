@@ -22,7 +22,11 @@ router.get("/splash", async (req, res) => {
             geometry: geo[0]        
           };
           //We need this line to parse the coordinates back into an array.
+          console.log('tsunami geo', geo)
+          console.log('tsunami complete before', featureComplete.geometry)
           featureComplete.geometry.coordinates = JSON.parse(geo[0].coordinates);
+          console.log('tsunami complete after', featureComplete.geometry.coordinates)
+
           return featureComplete
         });
       //Resolving promises and returning data.
