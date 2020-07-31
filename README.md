@@ -1,5 +1,8 @@
 This is the backend for FaultLine. The associated frontend repo is here: https://github.com/Lambda-School-Labs/quake-fe
 
+[![Maintainability](https://api.codeclimate.com/v1/badges/f61fc031069ee4b822bf/maintainability)](https://codeclimate.com/github/Lambda-School-Labs/quake-be/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/f61fc031069ee4b822bf/test_coverage)](https://codeclimate.com/github/Lambda-School-Labs/quake-be/test_coverage)
+
 Endpoints:
 /api/activity/first-load
 /api/activity/alltime-biggest
