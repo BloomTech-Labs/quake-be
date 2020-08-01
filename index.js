@@ -1,6 +1,4 @@
 const server = require('./server.js');
-require('dotenv').config()
-
 
 const cron = require('node-cron');
 const axios = require('axios');
