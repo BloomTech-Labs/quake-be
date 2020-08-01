@@ -16,7 +16,7 @@ server.use('/api/activity',ActivityRouter);
 server.use('/api/nukes', NukesRouter);
 server.use('/api/tsunami', TsunamiRouter);
 server.use('/api/refresh', RefreshRouter);
-server.use('api/sms', SmsRouter);
+server.use('/api/sms', SmsRouter);
 
 
 
