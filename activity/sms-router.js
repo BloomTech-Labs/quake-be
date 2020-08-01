@@ -24,10 +24,8 @@ router.get("/test", async (req, res) => {
 
 
 //Twilio SMS trigger for when activity matches item in notification table
-//
-// Download the helper library from https://www.twilio.com/docs/node/install
 // Your Account Sid and Auth Token from twilio.com/console
-// DANGER! This is insecure. See http://twil.io/secure
+// Devs: Don't forget to add .env file locally with the secrets in Trello
 function TwilioTrigger(toNum, Msg) {
     const accountSid = process.env.ACC_SID;
     const authToken = process.env.TW_TOKEN;
