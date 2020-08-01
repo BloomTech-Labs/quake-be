@@ -67,11 +67,22 @@ cron.schedule('0 */5 * * * *', () => { //runs every 5 minutes
     //Dates
     var today = new Date();
     const ymd = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-    const sevenDays = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()-7}`;
+
+    var days = 7; // Days you want to subtract
+    var date = new Date();
+    var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+    var day =last.getDate();
+    var month=last.getMonth()+1;
+    var year=last.getFullYear();
+    const sevenDays = `${year}-${month}-${day}`;
+    
     // console.log('current date:', ymd);
     // console.log('7 days ago:', sevenDays);
     const starttime = sevenDays;
+    console.log('starttime', starttime);
     const endtime = ymd;
+    console.log('endtime', endtime);
+
 
     //Other params
     const minmagnitude = 0
