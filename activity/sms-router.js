@@ -20,7 +20,20 @@ const router = express.Router();
 
 //Twilio SMS trigger for when activity matches item in notification table
 //
+// Download the helper library from https://www.twilio.com/docs/node/install
+// Your Account Sid and Auth Token from twilio.com/console
+// DANGER! This is insecure. See http://twil.io/secure
+const accountSid = process.env.ACC_SID;
+const authToken = process.env.TW_TOKEN;
+const client = require('twilio')(accountSid, authToken);
 
+client.messages
+  .create({
+     body: 'This is the ship that made the Kessel Run in fourteen parsecs?',
+     from: '+15017122661',
+     to: '+15558675310'
+   })
+  .then(message => console.log(message.sid));
 
 
 
