@@ -3,20 +3,8 @@ const axios = require('axios');
 const Activity = require('./activity-model.js');
 const cron = require('node-cron');
 
-
 // '/api/activity'
 const router = express.Router();
-
-// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=100&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
-
-
-//top 20 all time biggest
-// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=20&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
-
-//top 30 in last 7 days
-// https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=30&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}
-
-
 
 // '/api/activity/first-load
 router.get("/first-load", async (req, res) => {
@@ -45,7 +33,7 @@ router.get("/first-load", async (req, res) => {
       delete newFeature.status;
       return newFeature
     })
-    res.json({features});
+    res.status(200).json({features});
   } 
   
   catch (error) {
@@ -162,7 +150,7 @@ router.get("/alltime-biggest", async (req, res) => {
       delete newFeature.status;
       return newFeature
     })
-    res.json({features});
+    res.status(200).json({features});
   } 
   
   catch (error) {
