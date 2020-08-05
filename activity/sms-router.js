@@ -3,6 +3,8 @@ const axios = require('axios');
 // const Sms = require('./sms-model.js'); //Add this model for SMS table db actions.
 const cron = require('node-cron');
 require('dotenv').config()
+const turf = require('turf');
+const { ConversationPage } = require('twilio/lib/rest/conversations/v1/conversation');
 
 
 
@@ -38,6 +40,18 @@ function TwilioTrigger(toNum, Msg) {
          to: toNum
        })
       .then(message => console.log(message.sid));
+}
+
+
+// [long, lat], [long, lat] ***caution that longitude is first param and latitude is second param***
+// example: distanceBetween([-75.343, 39.984], [-75.534, 39.123]) should provide distance of 97.16km
+function distanceBetween(from, to) {
+  const fromCoords = turf.point(from);
+  const toCoords = turf.point(to);
+  console.log(fromCoords, toCoords)
+
+  const distance = turf.distance(fromCoords, toCoords).toFixed(3); // result is in km
+  return distance
 }
 
 module.exports = router;
