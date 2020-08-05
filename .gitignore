@@ -51,7 +51,7 @@ web_modules/
 .npm
 
 # Ignore Databases
-.db3
+*.db3
 
 # Optional eslint cache
 .eslintcache
