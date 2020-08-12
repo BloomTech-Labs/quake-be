@@ -50,8 +50,9 @@ function distanceBetween(from, to) {
   const toCoords = turf.point(to);
   console.log(fromCoords, toCoords)
 
-  const distance = turf.distance(fromCoords, toCoords).toFixed(3); // result is in km
+  const distance = turf.distance(fromCoords, toCoords).toFixed(2); // result is in km
   return distance
 }
 
-module.exports = router;
+module.exports = router, { distanceBetween, };
+
