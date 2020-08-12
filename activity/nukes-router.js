@@ -34,7 +34,7 @@ router.get("/boom", async (req, res) => {
       delete newFeature.status;
       return newFeature
     })
-    res.json({features});
+    res.status(200).json({features});
     } 
     
     catch (error) {

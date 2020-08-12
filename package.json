@@ -4,14 +4,15 @@
   "main": "index.js",
   "scripts": {
     "server": "nodemon index.js",
-    "test": "jest --detectOpenHandles --forceExit",
-    "coverage": "jest --coverage --detectOpenHandles --forceExit || true",
+    "test": "cross-env DB_ENV=testing jest --detectOpenHandles --forceExit",
+    "coverage": "cross-env DB_ENV=testing jest --coverage --detectOpenHandles --forceExit || true",
     "refresh": "node ./activity/refresh-router.js"
   },
   "engines": {
     "node": "14.x"
   },
   "jest": {
+    "testEnvironment": "node",
     "collectCoverageFrom": [
       "**/*.js",
       "!**/node_modules/**",
@@ -22,8 +23,10 @@
   "repository": "https://github.com/Lambda-School-Labs/quake-be.git",
   "license": "MIT",
   "dependencies": {
+    "@turf/distance": "^6.0.1",
     "axios": "^0.19.2",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "gitignore": "^0.6.0",
@@ -36,6 +39,7 @@
     "pg": "^8.2.2",
     "sqlite3": "^4.2.0",
     "supertest": "^4.0.2",
+    "turf": "^3.0.14",
     "twilio": "^3.48.1"
   }
 }
