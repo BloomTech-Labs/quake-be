@@ -7,7 +7,7 @@
     "test": "cross-env DB_ENV=testing jest --detectOpenHandles --forceExit",
     "coverage": "cross-env DB_ENV=testing jest --coverage --detectOpenHandles --forceExit || true",
     "refresh": "node ./activity/refresh-router.js",
-    "postinstall": "knex migrate:rollback && knex migrate:latest && knex seed:run"
+    "postinstall": "knex migrate:rollback && knex migrate:latest && knex seed:run && node ./activity/refresh-router.js"
   },
   "engines": {
     "node": "14.x"
