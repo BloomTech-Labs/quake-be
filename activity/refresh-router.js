@@ -11,7 +11,7 @@ router.get("/refresh", (req, res) => {
 });
 
 router.refresh = () => {
-  console.log('bar');
+  console.log('refresh function called');
   //latest
 //get latest from DB
 Activity.checksum('activity').then(res => {
