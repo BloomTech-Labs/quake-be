@@ -6,7 +6,8 @@
     "server": "nodemon index.js",
     "test": "cross-env DB_ENV=testing jest --detectOpenHandles --forceExit",
     "coverage": "cross-env DB_ENV=testing jest --coverage --detectOpenHandles --forceExit || true",
-    "refresh": "node ./activity/refresh-router.js"
+    "refresh": "node ./activity/refresh-router.js",
+    "postinstall": "knex migrate:rollback && knex migrate:latest && knex seed:run"
   },
   "engines": {
     "node": "14.x"
