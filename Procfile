@@ -1,1 +1,1 @@
-web: yarn run postinstall && yarn run refresh && yarn run server
+web: yarn run postinstall && yarn run server && node ./activity/refresh-router.js
