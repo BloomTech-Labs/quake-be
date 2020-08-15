@@ -55,6 +55,10 @@ web_modules/
 *.db3
 data/activity.db3
 
+# Apple Mac DS Store
+.DS_Store
+data/.DS_Store
+
 
 # Optional eslint cache
 .eslintcache
