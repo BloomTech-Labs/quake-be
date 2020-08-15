@@ -52,6 +52,9 @@ web_modules/
 
 # Ignore Databases
 .db3
+*.db3
+data/activity.db3
+
 
 # Optional eslint cache
 .eslintcache
