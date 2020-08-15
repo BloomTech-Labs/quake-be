@@ -18,8 +18,6 @@ server.use('/api/tsunami', TsunamiRouter);
 server.use('/api/refresh', RefreshRouter);
 server.use('/api/sms', SmsRouter);
 
-
-
 server.get('/', (req, res) => {
     res.status(201).json({ message: 'hello world' });
 });
