@@ -10,6 +10,10 @@ const {
 
 // '/api/sms'
 const router = express.Router();
+const accountSid = process.env.ACC_SID;
+const authToken = process.env.TW_TOKEN;
+const serviceSid = process.env.SERVICE_SID;
+const client = require("twilio")(accountSid, authToken);
 
 router.post("/create-notify", async (req, res) => {
   const user = req.body;
@@ -22,9 +26,6 @@ router.post("/create-notify", async (req, res) => {
 });
 
 function createUser(user) {
-  const accountSid = process.env.ACC_SID;
-  const authToken = process.env.TW_TOKEN;
-  const client = require("twilio")(accountSid, authToken);
 
   client.chat
     .services(process.env.SERVICE_SID)
@@ -37,12 +38,30 @@ function createUser(user) {
   //Eddie - add verification code here - check user owns the number//
 }
 
+router.post("/verify", async (req, res) => {
+  const user = "+17605297438";
+  console.log(user);
+
+  verifyUser(user);
+  res.status(200).json({
+    message: "created",
+  });
+})
+
+
 // Add Cron job here to check latest activity against potential notification
 // frequency every 5 min
 // 24 hrs of activity (USGS could retrospectively add activity, not always real-time)
 // Min Magnitude = 5 or user preference
 // Global radius
 // check if there has been new activity since the last refresh (5 mins)
+
+
+  
+  
+  
+
+
 cron.schedule("0 */1 * * * *", () => {
   //runs every 5 minutes. Lowered to 1 min for testing.
   //Get the params for query ready
@@ -95,30 +114,34 @@ cron.schedule("0 */1 * * * *", () => {
 
       //Eddie- Fetch list of channels from Twilio
       // insert fetch channels and attributes here (within the .then)
+      // 
       //
-      //
-      router.get("/fetchVerifiedUser", async (req, res) => {
-        // const userSid = "CHba34fbcc81d544eb9cd98a7d4040bb58";
-        fetchMemberResource();
-        res.status(200).json({ message: "member fetched" });
-      });
-
-      function fetchMemberResource() {
-        const accountSid = process.env.ACC_SID;
-        const authToken = process.env.TW_TOKEN;
-        const serviceSid = process.env.SERVICE_SID;
-        const client = require("twilio")(accountSid, authToken);
-
-        client.chat
-          .services(serviceSid)
-          .users.list({ limit: 500 })
-          .then((users) => users.forEach((u) => console.log(u.sid)));
-      }
+      
+      client.chat
+      .services(serviceSid)
+      .users.list({ limit: 500 })
+      .then(async (u) => {
+      const twilioRes = [];
+      console.log('first twilioRes log', twilioRes);
+      const resUsers = u.map((users) => {
+      return {
+        identity: users.identity,
+        attributes: users.attributes
+      };
+    });
+    console.log('here is the array', resUsers); 
+  })
     })
     .catch((error) => {
       console.log(error);
     });
 });
+
+
+
+// ...twilioRes, 
+// identity: u.identity,
+// }
 
 //Pete- Compare any new activity with criteria in the Twilio attributes
 //Here is where we will confirm the USGS Activity ID has not already been notified to a particular cell # to avoid duplicates.
