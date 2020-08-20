@@ -164,4 +164,15 @@ function distanceBetween(from, to) {
   return distance;
 }
 
+
+// Returns true or false if match. Must pass in all params
+function fetchCompare (userCoords, activityCoords, userDistance, userMag, activityMag) {
+  const distance = distanceBetween(userCoords, activityCoords);
+  const mag = activityMag - userMag
+  if (distance <= userDistance && mag > 0) {
+    return true
+  }
+  else { return false }
+}
+
 module.exports = router;
