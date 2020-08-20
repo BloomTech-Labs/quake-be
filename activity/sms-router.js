@@ -1,6 +1,5 @@
 const express = require("express");
 const axios = require("axios");
-// const Sms = require('./sms-model.js'); //Add this model for SMS table db actions.
 const cron = require("node-cron");
 require("dotenv").config();
 const turf = require("turf");
@@ -26,7 +25,6 @@ router.post("/create-notify", async (req, res) => {
 });
 
 function createUser(user) {
-
   client.chat
     .services(process.env.SERVICE_SID)
     .users.create({
@@ -49,19 +47,11 @@ router.post("/verify", async (req, res) => {
 })
 
 
-// Add Cron job here to check latest activity against potential notification
+// Cron job here to check latest activity against potential notification
 // frequency every 5 min
 // 24 hrs of activity (USGS could retrospectively add activity, not always real-time)
-// Min Magnitude = 5 or user preference
-// Global radius
+// Min Magnitude = 5 but could add user preference later, Global radius
 // check if there has been new activity since the last refresh (5 mins)
-
-
-  
-  
-  
-
-
 cron.schedule("0 */1 * * * *", () => {
   //runs every 5 minutes. Lowered to 1 min for testing.
   //Get the params for query ready
@@ -89,7 +79,7 @@ cron.schedule("0 */1 * * * *", () => {
   //Other params
   const minmagnitude = 4; //lowered it for testing
   const maxmagnitude = 11;
-  const maxradiuskm = 5000; //global;
+  const maxradiuskm = 7000; //global;
   const latitude = 37.2751; //just needs some long/lat to pull.
   const longitude = -121.8261;
 
@@ -111,7 +101,7 @@ cron.schedule("0 */1 * * * *", () => {
         //add id, time, mag, geometery.coordinates,
       });
       const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
-      console.log(resValues); //resValues now contains an array of activity matching the criteria.  Next step is to fetch from Twilio then we can compare to understand which match attributes.
+      // console.log(resValues); //resValues now contains an array of activity matching the criteria.  Next step is to fetch from Twilio then we can compare to understand which match attributes.
 
       //Eddie- Fetch list of channels from Twilio
       // insert fetch channels and attributes here (within the .then)
@@ -127,62 +117,68 @@ cron.schedule("0 */1 * * * *", () => {
     });
 
     
-    const parsedUser = JSON.parse(resUsers[9].attributes);
-    console.log('parsedUser', parsedUser);
-    // const userCoords = parsedUser.coordinates;
-    // console.log('usercords', [JSON.parse(userCoords)]);
+    console.log('resUsers', resUsers);
 
-    console.log('parsed', parsedUser)
-    console.log('here is the array', resUsers); 
-    //userCoords, activityCoords, userDistance, userMag, activityMag
-    // console.log('userCoords', [userCoords[0], userCoords[1]]);
-    console.log('activityCoords', resValues[0].geo[0],  resValues[0].geo[1]);
-    // console.log('userDistance',parsedUser.distance );
-    console.log('userMag', 3);
-    console.log('activityMag', resValues[0].mag);
+    //map over each notification request from users
+    console.log('start of user map');
+    const smsToSend = [];
+    const fetchCompareResult = resUsers.map((user) => {
+      const parsedUser = JSON.parse(user.attributes);
+      //check the Twilio entry has attributes and in correct format
+      if (user.attributes.length > 0 && typeof parsedUser.coordinates == 'object') {
+        //map over each activity to check if it matches this user request
+        const matchingActivity = resValues.map((activity) => {
+          const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
+          // console.log('distance of activity check', calcDistance);
+          const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 5, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
+          
+          if (matchResult == true) {
+            //check that user hasn't already received notification for this id here:
+            //
+            //
 
 
-    console.log('fetchCompare', fetchCompare(parsedUser.coordinates, resValues[0].geo, parsedUser.distance, 3, resValues[0].mag));
-    const calcDistance = distanceBetween(parsedUser.coordinates, resValues[0].geo);
-    console.log('calcDistance', calcDistance);
-    const fetchCompareResult = fetchCompare(calcDistance, parsedUser.distance, 3, resValues[0].mag);
-
-    // const sendSms = (body) => {
-  
-    //   const testSid = process.env.TEST_ACC_SID;
-    //   const testAuthToken = process.env.TEST_TW_TOKEN
-    //   const testClient = require("twilio")(testSid, testAuthToken);
-    //   const body = {
-    //     mag: 8.5,
-    //     loc: "vista, CA",
-    //     link: "url" 
-    //   }
-    //   testClient.messages
-    //     .create({ 
-    //       body: (body.mag + " " + body.loc + " " + body.link), 
-    //       from: "+15005550006", 
-    //       to: "+17605297438" 
-    //     })
-    //     .then((message) => console.log(message))
-    //     .done();
-    // };
-    
-    
-    if (fetchCompareResult === true) {
-
-      //Store the details needed to send sms
-      // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
-      const notifyTrue = {
-        cell: parsedUser.cell,
-        distance: calcDistance,
-        mag: resValues[0].mag,
-        time: resValues[0].time,
-        id: resValues[0].id
+            //Store the details needed to send sms
+            // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
+            const notifyTrue = {
+              cell: parsedUser.cell,
+              distance: calcDistance,
+              mag: activity.mag,
+              time: activity.time,
+              id: activity.id
+            }
+          smsToSend.push(notifyTrue);
+          }
+        })
       }
-
+    })
+    console.log('Fetch comparison complete');
+    if (smsToSend.length > 0){
+      console.log(`${smsToSend.length} notification(s) to be sent:`);
+      console.log(smsToSend);
+      // Trigger SMS to be sent here by mapping over smsToSend
+      // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
+      //
+      // const sendSms = (body) => {
+      //   const testSid = process.env.TEST_ACC_SID;
+      //   const testAuthToken = process.env.TEST_TW_TOKEN
+      //   const testClient = require("twilio")(testSid, testAuthToken);
+      //   const body = {
+      //     mag: 8.5,
+      //     loc: "vista, CA",
+      //     link: "url" 
+      //   }
+      //   testClient.messages
+      //     .create({ 
+      //       body: (body.mag + " " + body.loc + " " + body.link), 
+      //       from: "+15005550006", 
+      //       to: "+17605297438" 
+      //     })
+      //     .then((message) => console.log(message))
+      //     .done();
+      // };
     }
-
-
+    
 
   })
     })
@@ -192,34 +188,19 @@ cron.schedule("0 */1 * * * *", () => {
 });
 
 
-
-// ...twilioRes, 
-// identity: u.identity,
-// }
-
-//Pete- Compare any new activity with criteria in the Twilio attributes
-//Here is where we will confirm the USGS Activity ID has not already been notified to a particular cell # to avoid duplicates.
-// insert comparison and check here
-//
-
-//Eddie- If new match, trigger an SMS notification...
-// insert Twilio SMS trigger here, we will also add the activity ID and current time/date as an attribute to channel so that can confirm who has already received which notifications, when.
-//
-
 // distanceBetween will be used in comparison for distance check.
 // [long, lat], [long, lat] ***caution that longitude is first param and latitude is second param***
 // example: distanceBetween([-75.343, 39.984], [-75.534, 39.123]) should provide distance of 97.16km
 function distanceBetween(from, to) {
   const fromCoords = turf.point(from);
   const toCoords = turf.point(to);
-  console.log(fromCoords, toCoords);
-
   const distance = turf.distance(fromCoords, toCoords).toFixed(3); // result is in km
   return distance;
 }
 
 
 // Returns true or false if match. Must pass in all params
+// seperated this out as a function to keep the main function shorter and intuitive
 function fetchCompare (calcDistance, userDistance, userMag, activityMag) {
   if (calcDistance <= userDistance && activityMag >= userMag) {
     return true
