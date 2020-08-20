@@ -89,9 +89,10 @@ cron.schedule("0 */1 * * * *", () => {
   //Other params
   const minmagnitude = 4; //lowered it for testing
   const maxmagnitude = 11;
-  const maxradiuskm = 7000; //global;
-  const latitude = 37.78197; //just needs some long/lat to pull.
-  const longitude = -121.93992;
+  const maxradiuskm = 5000; //global;
+  const latitude = 37.2751; //just needs some long/lat to pull.
+  const longitude = -121.8261;
+
   //no limit on results.
 
   //Use params to get latest from USGS
@@ -114,22 +115,75 @@ cron.schedule("0 */1 * * * *", () => {
 
       //Eddie- Fetch list of channels from Twilio
       // insert fetch channels and attributes here (within the .then)
-      // 
-      //
-      
       client.chat
       .services(serviceSid)
       .users.list({ limit: 500 })
       .then(async (u) => {
-      const twilioRes = [];
-      console.log('first twilioRes log', twilioRes);
       const resUsers = u.map((users) => {
       return {
         identity: users.identity,
         attributes: users.attributes
       };
     });
+
+    
+    const parsedUser = JSON.parse(resUsers[9].attributes);
+    console.log('parsedUser', parsedUser);
+    // const userCoords = parsedUser.coordinates;
+    // console.log('usercords', [JSON.parse(userCoords)]);
+
+    console.log('parsed', parsedUser)
     console.log('here is the array', resUsers); 
+    //userCoords, activityCoords, userDistance, userMag, activityMag
+    // console.log('userCoords', [userCoords[0], userCoords[1]]);
+    console.log('activityCoords', resValues[0].geo[0],  resValues[0].geo[1]);
+    // console.log('userDistance',parsedUser.distance );
+    console.log('userMag', 3);
+    console.log('activityMag', resValues[0].mag);
+
+
+    console.log('fetchCompare', fetchCompare(parsedUser.coordinates, resValues[0].geo, parsedUser.distance, 3, resValues[0].mag));
+    const calcDistance = distanceBetween(parsedUser.coordinates, resValues[0].geo);
+    console.log('calcDistance', calcDistance);
+    const fetchCompareResult = fetchCompare(calcDistance, parsedUser.distance, 3, resValues[0].mag);
+
+    // const sendSms = (body) => {
+  
+    //   const testSid = process.env.TEST_ACC_SID;
+    //   const testAuthToken = process.env.TEST_TW_TOKEN
+    //   const testClient = require("twilio")(testSid, testAuthToken);
+    //   const body = {
+    //     mag: 8.5,
+    //     loc: "vista, CA",
+    //     link: "url" 
+    //   }
+    //   testClient.messages
+    //     .create({ 
+    //       body: (body.mag + " " + body.loc + " " + body.link), 
+    //       from: "+15005550006", 
+    //       to: "+17605297438" 
+    //     })
+    //     .then((message) => console.log(message))
+    //     .done();
+    // };
+    
+    
+    if (fetchCompareResult === true) {
+
+      //Store the details needed to send sms
+      // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
+      const notifyTrue = {
+        cell: parsedUser.cell,
+        distance: calcDistance,
+        mag: resValues[0].mag,
+        time: resValues[0].time,
+        id: resValues[0].id
+      }
+
+    }
+
+
+
   })
     })
     .catch((error) => {
@@ -166,10 +220,8 @@ function distanceBetween(from, to) {
 
 
 // Returns true or false if match. Must pass in all params
-function fetchCompare (userCoords, activityCoords, userDistance, userMag, activityMag) {
-  const distance = distanceBetween(userCoords, activityCoords);
-  const mag = activityMag - userMag
-  if (distance <= userDistance && mag > 0) {
+function fetchCompare (calcDistance, userDistance, userMag, activityMag) {
+  if (calcDistance <= userDistance && activityMag >= userMag) {
     return true
   }
   else { return false }
