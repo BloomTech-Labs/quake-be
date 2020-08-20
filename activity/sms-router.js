@@ -83,9 +83,7 @@ cron.schedule("0 */1 * * * *", () => {
   const latitude = 37.2751; //just needs some long/lat to pull.
   const longitude = -121.8261;
 
-  //no limit on results.
-
-  //Use params to get latest from USGS
+  //Use params to get latest from USGS, ensure no limit on the request.
   axios
     .get(
       `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`
@@ -98,12 +96,10 @@ cron.schedule("0 */1 * * * *", () => {
           mag: a.properties.mag,
           geo: a.geometry.coordinates,
         };
-        //add id, time, mag, geometery.coordinates,
       });
-      const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
-      // console.log(resValues); //resValues now contains an array of activity matching the criteria.  Next step is to fetch from Twilio then we can compare to understand which match attributes.
+      const resValues = resUnsortedValues.sort(); //sort asc
+      console.log(`**** there are currently ${resValues.length} earthquakes in the last 24hrs which could match a notification ****`);
 
-      //Eddie- Fetch list of channels from Twilio
       // insert fetch channels and attributes here (within the .then)
       client.chat
       .services(serviceSid)
@@ -116,8 +112,8 @@ cron.schedule("0 */1 * * * *", () => {
       };
     });
 
-    
-    console.log('resUsers', resUsers);
+    console.log(`**** there are currently ${resUsers.length} notifications which could match a activity, checking now ****`);
+
 
     //map over each notification request from users
     console.log('start of user map');
