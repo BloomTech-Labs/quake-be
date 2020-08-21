@@ -93,7 +93,7 @@ cron.schedule("0 */1 * * * *", () => {
   // console.log("endtime", endtime);
 
   //Other params
-  const minmagnitude = 4; //lowered it for testing
+  const minmagnitude = 3; //lowered it for testing
   const maxmagnitude = 11;
   const maxradiuskm = 7000; //global;
   const latitude = 37.2751; //just needs some long/lat to pull.
@@ -144,7 +144,7 @@ cron.schedule("0 */1 * * * *", () => {
         const matchingActivity = resValues.map((activity) => {
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
           // console.log('distance of activity check', calcDistance);
-          const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 5, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
+          const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 3, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
           // console.log('matchResult', matchResult, parsedUser, activity);
           
           if (matchResult == true) {
@@ -173,13 +173,14 @@ cron.schedule("0 */1 * * * *", () => {
         })
       }
     })
+
+
     // console.log('Fetch comparison complete');
     if (smsToSend.length > 0){
       console.log(`**** ${smsToSend.length} notification(s) to be sent:`);
       // console.log(smsToSend);
       // Trigger SMS to be sent here by mapping over smsToSend
       // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
-
       smsToSend.forEach(item => {
         const currentAttributes = item.attributes;
         if (item.attributes.sentReceipts) { 
@@ -188,37 +189,41 @@ cron.schedule("0 */1 * * * *", () => {
           updatedReceipts.push(item.id)
           const updatedAttributesMore = ({...item.attributes, sentReceipts: updatedReceipts})
           // console.log(updatedAttributesMore)
-          client.chat.services(serviceSid)
-          .users(item.cell)
-          .update({attributes: JSON.stringify(updatedAttributesMore)})
-          .then(user => console.log(user));
+          sendSms(item).then(async (response) => {
+            console.log('send response', response)
+            client.chat.services(serviceSid)
+            .users(item.cell)
+            .update({attributes: JSON.stringify(updatedAttributesMore)})
+            .then(user => console.log(user))
+            .catch((error) => {
+              console.log(error);
+              });
+          });
         } else {
           const updatedAttributes = ({...item.attributes, sentReceipts: [item.id]})
           // console.log(updatedAttributes);
+          sendSms(item).then(async (response) => {
+          console.log('send response', response)
           client.chat.services(serviceSid)
            .users(item.cell)
            .update({attributes: JSON.stringify(updatedAttributes)})
-           .then(user => console.log(user));
+           .then(user => console.log(user))
+           .catch((error) => {
+            console.log(error);
+            });
+          })
         }
-        sendSms(item);
-        
       });
-
-      
     } else {
       console.log('**** no notifications to send ****');
     }
-    
 
   })
-    })
+  })
     .catch((error) => {
       console.log(error);
     });
 });
-
-
-
 
 
 // distanceBetween will be used in comparison for distance check.
