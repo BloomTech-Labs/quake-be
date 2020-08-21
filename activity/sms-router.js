@@ -56,8 +56,11 @@ const sendSms = (activityData) => {
       to: activityData.cell 
     })
     .then((message) => console.log(message))
-    .done();
-};
+    .catch((error) => {
+      console.log(error);
+    })
+    .done()
+  };
 
 
 // Cron job here to check latest activity against potential notification
@@ -140,8 +143,9 @@ cron.schedule("0 */1 * * * *", () => {
         //map over each activity to check if it matches this user request
         const matchingActivity = resValues.map((activity) => {
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
-          // console.log('distance of activity check', calcDistance);
+          console.log('distance of activity check', calcDistance);
           const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 5, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
+          console.log('matchResult', matchResult, parsedUser, activity);
           
           if (matchResult == true) {
             //check that user hasn't already received notification for this id here:
@@ -150,20 +154,20 @@ cron.schedule("0 */1 * * * *", () => {
               parsedUser.sentReceipts.forEach(id => {
                 if (activity.id == id) {
                   console.log('already sent, will not be added to smsToSent')
-                } else {
-                  //Store the details needed to send sms
-                  // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
-                  const notifyTrue = {
-                    cell: parsedUser.cell,
-                    distance: Math.round(calcDistance),
-                    mag: activity.mag,
-                    time: moment(activity.time).format("MM-DD-YYYY / hh:mm A"),
-                    id: activity.id,
-                    attributes: parsedUser
-                  }
-                  smsToSend.push(notifyTrue);
                 }
               })
+            } else {
+              //Store the details needed to send sms
+              // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
+              const notifyTrue = {
+                cell: parsedUser.cell,
+                distance: Math.round(calcDistance),
+                mag: activity.mag,
+                time: moment(activity.time).format("MM-DD-YYYY / hh:mm A"),
+                id: activity.id,
+                attributes: parsedUser
+              }
+              smsToSend.push(notifyTrue);
             }
           }
         })
@@ -177,16 +181,17 @@ cron.schedule("0 */1 * * * *", () => {
       // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
 
       smsToSend.forEach(item => {
-      sendSms(item)
-       
-
         const currentAttributes = item.attributes;
         if (item.attributes.sentReceipts) { 
-          console.log('already exists', item.attributes.sentReceipts)
+          console.log('has received sms in the past', item.attributes.sentReceipts)
           const updatedReceipts = item.attributes.sentReceipts
           updatedReceipts.push(item.id)
           const updatedAttributesMore = ({...item.attributes, sentReceipts: updatedReceipts})
           console.log(updatedAttributesMore)
+          client.chat.services(serviceSid)
+          .users(item.cell)
+          .update({attributes: JSON.stringify(updatedAttributesMore)})
+          .then(user => console.log(user));
         } else {
           const updatedAttributes = ({...item.attributes, sentReceipts: [item.id]})
           console.log(updatedAttributes);
@@ -195,7 +200,7 @@ cron.schedule("0 */1 * * * *", () => {
            .update({attributes: JSON.stringify(updatedAttributes)})
            .then(user => console.log(user));
         }
-        
+        sendSms(item);
         
       });
 
