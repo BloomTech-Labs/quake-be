@@ -3,6 +3,8 @@ const axios = require("axios");
 const cron = require("node-cron");
 require("dotenv").config();
 const turf = require("turf");
+const moment = require("moment");
+
 const {
   ConversationPage,
 } = require("twilio/lib/rest/conversations/v1/conversation");
@@ -44,7 +46,21 @@ router.post("/verify", async (req, res) => {
   res.status(200).json({
     message: "created",
   });
-})
+});
+
+const sendSms = (activityData) => {
+  client.messages
+    .create({ 
+      body: (`This is a notification from Faultline.app, an earthquake measuring ${activityData.mag} has been detected ${activityData.distance}km from the location you provided. The time of the earthquake according to USGS was ${activityData.time}`), 
+      from: process.env.TWILIO_NUMBER, 
+      to: activityData.cell 
+    })
+    .then((message) => console.log(message))
+    .catch((error) => {
+      console.log(error);
+    })
+    .done()
+  };
 
 
 // Cron job here to check latest activity against potential notification
@@ -113,6 +129,8 @@ cron.schedule("0 */1 * * * *", () => {
     });
 
     console.log(`**** there are currently ${resUsers.length} notifications which could match a activity, checking now ****`);
+    console.log('current users', resUsers)
+
 
 
     //map over each notification request from users
@@ -125,25 +143,32 @@ cron.schedule("0 */1 * * * *", () => {
         //map over each activity to check if it matches this user request
         const matchingActivity = resValues.map((activity) => {
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
-          // console.log('distance of activity check', calcDistance);
+          console.log('distance of activity check', calcDistance);
           const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 5, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
+          console.log('matchResult', matchResult, parsedUser, activity);
           
           if (matchResult == true) {
             //check that user hasn't already received notification for this id here:
-            //
-            //
-
-
-            //Store the details needed to send sms
-            // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
-            const notifyTrue = {
-              cell: parsedUser.cell,
-              distance: calcDistance,
-              mag: activity.mag,
-              time: activity.time,
-              id: activity.id
+            if (parsedUser.sentReceipts) {
+              console.log('receipts', parsedUser.sentReceipts);
+              parsedUser.sentReceipts.forEach(id => {
+                if (activity.id == id) {
+                  console.log('already sent, will not be added to smsToSent')
+                }
+              })
+            } else {
+              //Store the details needed to send sms
+              // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
+              const notifyTrue = {
+                cell: parsedUser.cell,
+                distance: Math.round(calcDistance),
+                mag: activity.mag,
+                time: moment(activity.time).format("MM-DD-YYYY / hh:mm A"),
+                id: activity.id,
+                attributes: parsedUser
+              }
+              smsToSend.push(notifyTrue);
             }
-          smsToSend.push(notifyTrue);
           }
         })
       }
@@ -154,25 +179,32 @@ cron.schedule("0 */1 * * * *", () => {
       console.log(smsToSend);
       // Trigger SMS to be sent here by mapping over smsToSend
       // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
-      //
-      // const sendSms = (body) => {
-      //   const testSid = process.env.TEST_ACC_SID;
-      //   const testAuthToken = process.env.TEST_TW_TOKEN
-      //   const testClient = require("twilio")(testSid, testAuthToken);
-      //   const body = {
-      //     mag: 8.5,
-      //     loc: "vista, CA",
-      //     link: "url" 
-      //   }
-      //   testClient.messages
-      //     .create({ 
-      //       body: (body.mag + " " + body.loc + " " + body.link), 
-      //       from: "+15005550006", 
-      //       to: "+17605297438" 
-      //     })
-      //     .then((message) => console.log(message))
-      //     .done();
-      // };
+
+      smsToSend.forEach(item => {
+        const currentAttributes = item.attributes;
+        if (item.attributes.sentReceipts) { 
+          console.log('has received sms in the past', item.attributes.sentReceipts)
+          const updatedReceipts = item.attributes.sentReceipts
+          updatedReceipts.push(item.id)
+          const updatedAttributesMore = ({...item.attributes, sentReceipts: updatedReceipts})
+          console.log(updatedAttributesMore)
+          client.chat.services(serviceSid)
+          .users(item.cell)
+          .update({attributes: JSON.stringify(updatedAttributesMore)})
+          .then(user => console.log(user));
+        } else {
+          const updatedAttributes = ({...item.attributes, sentReceipts: [item.id]})
+          console.log(updatedAttributes);
+          client.chat.services(serviceSid)
+           .users(item.cell)
+           .update({attributes: JSON.stringify(updatedAttributes)})
+           .then(user => console.log(user));
+        }
+        sendSms(item);
+        
+      });
+
+      
     }
     
 
@@ -182,6 +214,9 @@ cron.schedule("0 */1 * * * *", () => {
       console.log(error);
     });
 });
+
+
+
 
 
 // distanceBetween will be used in comparison for distance check.
