@@ -69,7 +69,7 @@ const sendSms = (activityData) => {
 // Min Magnitude = 5 but could add user preference later, Global radius
 // check if there has been new activity since the last refresh (5 mins)
 cron.schedule("0 */1 * * * *", () => {
-  //runs every 5 minutes. Lowered to 1 min for testing.
+  //runs every 5 minutes.
   //Get the params for query ready
   //Dates
   var today = new Date();
@@ -85,12 +85,12 @@ cron.schedule("0 */1 * * * *", () => {
   var year = last.getFullYear();
   const oneDay = `${year}-${month}-${day}`;
 
-  console.log("current date:", ymd);
-  console.log("24hrs:", oneDay);
+  // console.log("current date:", ymd);
+  // console.log("24hrs:", oneDay);
   const starttime = oneDay;
-  console.log("starttime", starttime);
+  // console.log("starttime", starttime);
   const endtime = ymd;
-  console.log("endtime", endtime);
+  // console.log("endtime", endtime);
 
   //Other params
   const minmagnitude = 4; //lowered it for testing
@@ -129,12 +129,12 @@ cron.schedule("0 */1 * * * *", () => {
     });
 
     console.log(`**** there are currently ${resUsers.length} notifications which could match a activity, checking now ****`);
-    console.log('current users', resUsers)
+    // console.log('current users', resUsers)
 
 
 
     //map over each notification request from users
-    console.log('start of user map');
+    // console.log('start of user map');
     const smsToSend = [];
     const fetchCompareResult = resUsers.map((user) => {
       const parsedUser = JSON.parse(user.attributes);
@@ -143,17 +143,17 @@ cron.schedule("0 */1 * * * *", () => {
         //map over each activity to check if it matches this user request
         const matchingActivity = resValues.map((activity) => {
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
-          console.log('distance of activity check', calcDistance);
+          // console.log('distance of activity check', calcDistance);
           const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 5, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
-          console.log('matchResult', matchResult, parsedUser, activity);
+          // console.log('matchResult', matchResult, parsedUser, activity);
           
           if (matchResult == true) {
             //check that user hasn't already received notification for this id here:
             if (parsedUser.sentReceipts) {
-              console.log('receipts', parsedUser.sentReceipts);
+              // console.log('receipts', parsedUser.sentReceipts);
               parsedUser.sentReceipts.forEach(id => {
                 if (activity.id == id) {
-                  console.log('already sent, will not be added to smsToSent')
+                  // console.log('already sent, will not be added to smsToSent')
                 }
               })
             } else {
@@ -173,28 +173,28 @@ cron.schedule("0 */1 * * * *", () => {
         })
       }
     })
-    console.log('Fetch comparison complete');
+    // console.log('Fetch comparison complete');
     if (smsToSend.length > 0){
-      console.log(`${smsToSend.length} notification(s) to be sent:`);
-      console.log(smsToSend);
+      console.log(`**** ${smsToSend.length} notification(s) to be sent:`);
+      // console.log(smsToSend);
       // Trigger SMS to be sent here by mapping over smsToSend
       // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
 
       smsToSend.forEach(item => {
         const currentAttributes = item.attributes;
         if (item.attributes.sentReceipts) { 
-          console.log('has received sms in the past', item.attributes.sentReceipts)
+          // console.log('has received sms in the past', item.attributes.sentReceipts)
           const updatedReceipts = item.attributes.sentReceipts
           updatedReceipts.push(item.id)
           const updatedAttributesMore = ({...item.attributes, sentReceipts: updatedReceipts})
-          console.log(updatedAttributesMore)
+          // console.log(updatedAttributesMore)
           client.chat.services(serviceSid)
           .users(item.cell)
           .update({attributes: JSON.stringify(updatedAttributesMore)})
           .then(user => console.log(user));
         } else {
           const updatedAttributes = ({...item.attributes, sentReceipts: [item.id]})
-          console.log(updatedAttributes);
+          // console.log(updatedAttributes);
           client.chat.services(serviceSid)
            .users(item.cell)
            .update({attributes: JSON.stringify(updatedAttributes)})
@@ -205,6 +205,8 @@ cron.schedule("0 */1 * * * *", () => {
       });
 
       
+    } else {
+      console.log('**** no notifications to send ****');
     }
     
 
