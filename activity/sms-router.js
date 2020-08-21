@@ -190,6 +190,8 @@ cron.schedule("0 */1 * * * *", () => {
           const updatedAttributesMore = ({...item.attributes, sentReceipts: updatedReceipts})
           // console.log(updatedAttributesMore)
           sendSms(item).then(async (response) => {
+            console.log('30s delay to help Twilio servers');
+            setTimeout(() => { 
             console.log('send response', response)
             client.chat.services(serviceSid)
             .users(item.cell)
@@ -198,19 +200,23 @@ cron.schedule("0 */1 * * * *", () => {
             .catch((error) => {
               console.log(error);
               });
+            }, 30000);
           });
         } else {
           const updatedAttributes = ({...item.attributes, sentReceipts: [item.id]})
           // console.log(updatedAttributes);
           sendSms(item).then(async (response) => {
-          console.log('send response', response)
-          client.chat.services(serviceSid)
+          console.log('30s delay to help Twilio servers');
+          setTimeout(() => { 
+            console.log('send response', response)
+            client.chat.services(serviceSid)
            .users(item.cell)
            .update({attributes: JSON.stringify(updatedAttributes)})
            .then(user => console.log(user))
            .catch((error) => {
             console.log(error);
             });
+          }, 30000);
           })
         }
       });
