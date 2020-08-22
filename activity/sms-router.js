@@ -93,7 +93,7 @@ cron.schedule("0 */1 * * * *", () => {
   // console.log("endtime", endtime);
 
   //Other params
-  const minmagnitude = 3; //lowered it for testing
+  const minmagnitude = 4.99; 
   const maxmagnitude = 11;
   const maxradiuskm = 7000; //global;
   const latitude = 37.2751; //just needs some long/lat to pull.
@@ -144,7 +144,7 @@ cron.schedule("0 */1 * * * *", () => {
         const matchingActivity = resValues.map((activity) => {
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
           // console.log('distance of activity check', calcDistance);
-          const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 3, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
+          const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 4.99, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
           // console.log('matchResult', matchResult, parsedUser, activity);
           
           if (matchResult == true) {
@@ -182,6 +182,7 @@ cron.schedule("0 */1 * * * *", () => {
       // Trigger SMS to be sent here by mapping over smsToSend
       // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
       smsToSend.forEach(item => {
+        setTimeout(() => { 
         const currentAttributes = item.attributes;
         if (item.attributes.sentReceipts) { 
           // console.log('has received sms in the past', item.attributes.sentReceipts)
@@ -210,20 +211,20 @@ cron.schedule("0 */1 * * * *", () => {
           setTimeout(() => { 
             console.log('send response', response)
             client.chat.services(serviceSid)
-           .users(item.cell)
-           .update({attributes: JSON.stringify(updatedAttributes)})
-           .then(user => console.log(user))
-           .catch((error) => {
-            console.log(error);
-            });
-          }, 30000);
-          })
-        }
+              .users(item.cell)
+              .update({attributes: JSON.stringify(updatedAttributes)})
+              .then(user => console.log(user))
+                .catch((error) => {
+                console.log(error);
+                });
+              }, 30000);
+            })
+          }
+        }, 5000); //5 second timer delay between sms send to help Twilio servers
       });
     } else {
       console.log('**** no notifications to send ****');
     }
-
   })
   })
     .catch((error) => {
