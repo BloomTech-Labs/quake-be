@@ -51,7 +51,7 @@ router.post("/verify", async (req, res) => {
 const sendSms = (activityData) => {
   client.messages
     .create({ 
-      body: (`This is a notification from Faultline.app, an earthquake measuring ${activityData.mag} has been detected ${activityData.distance}km from the location you provided. The time of the earthquake according to USGS was ${activityData.time}`), 
+      body: (`This is a notification from Faultline.app, an earthquake measuring ${activityData.mag} has been detected ${activityData.distance}km from the location you provided. According to USGS, the time of the earthquake was ${activityData.time} and the location was ${activityData.place}`), 
       from: process.env.TWILIO_NUMBER, 
       to: activityData.cell 
     })
@@ -105,12 +105,14 @@ cron.schedule("0 */1 * * * *", () => {
       `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`
     )
     .then(async (response) => {
+      console.log(response.data.features);
       const resUnsortedValues = response.data.features.map((a) => {
         return {
           id: a.id,
           time: a.properties.time,
           mag: a.properties.mag,
-          geo: a.geometry.coordinates,
+          geo: a.geometry.coordinates, 
+          place: a.properties.place
         };
       });
       const resValues = resUnsortedValues.sort(); //sort asc
@@ -135,13 +137,14 @@ cron.schedule("0 */1 * * * *", () => {
 
     //map over each notification request from users
     // console.log('start of user map');
-    const smsToSend = [];
+    const smsToSend = []; //starts with an empty array which will capture any sms to send.
     const fetchCompareResult = resUsers.map((user) => {
       const parsedUser = JSON.parse(user.attributes);
       //check the Twilio entry has attributes and in correct format
       if (user.attributes.length > 0 && typeof parsedUser.coordinates == 'object') {
         //map over each activity to check if it matches this user request
         const matchingActivity = resValues.map((activity) => {
+          console.log('activity', activity);
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
           // console.log('distance of activity check', calcDistance);
           const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 4.99, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
@@ -165,7 +168,8 @@ cron.schedule("0 */1 * * * *", () => {
                 mag: activity.mag,
                 time: moment(activity.time).format("MM-DD-YYYY / hh:mm A"),
                 id: activity.id,
-                attributes: parsedUser
+                attributes: parsedUser,
+                place: activity.place
               }
               smsToSend.push(notifyTrue);
             }
