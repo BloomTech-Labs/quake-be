@@ -68,7 +68,7 @@ const sendSms = (activityData) => {
 // 24 hrs of activity (USGS could retrospectively add activity, not always real-time)
 // Min Magnitude = 5 but could add user preference later, Global radius
 // check if there has been new activity since the last refresh (5 mins)
-cron.schedule("0 */1 * * * *", () => {
+cron.schedule("0 */5 * * * *", () => {
   //runs every 5 minutes.
   //Get the params for query ready
   //Dates
@@ -105,7 +105,6 @@ cron.schedule("0 */1 * * * *", () => {
       `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`
     )
     .then(async (response) => {
-      console.log(response.data.features);
       const resUnsortedValues = response.data.features.map((a) => {
         return {
           id: a.id,
@@ -144,7 +143,6 @@ cron.schedule("0 */1 * * * *", () => {
       if (user.attributes.length > 0 && typeof parsedUser.coordinates == 'object') {
         //map over each activity to check if it matches this user request
         const matchingActivity = resValues.map((activity) => {
-          console.log('activity', activity);
           const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
           // console.log('distance of activity check', calcDistance);
           const matchResult = (fetchCompare(calcDistance, parsedUser.distance, 4.99, activity.mag)); //setting minimum mag to 5, maybe give user option in future.
@@ -161,7 +159,6 @@ cron.schedule("0 */1 * * * *", () => {
               })
             } else {
               //Store the details needed to send sms
-              // "This is a notification from Faultline.app, an earthquake measuring ${mag} has been detected ${distance}km from the location you provided at {time}"
               const notifyTrue = {
                 cell: parsedUser.cell,
                 distance: Math.round(calcDistance),
