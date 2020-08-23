@@ -14,6 +14,7 @@ const {
   ConversationPage,
 } = require("twilio/lib/rest/conversations/v1/conversation");
 
+
 // '/api/sms' <-- this is path to any endpoints in this router.
 const router = express.Router();
 
@@ -33,11 +34,11 @@ async function getUsgs() {
   var month = last.getMonth() + 1;
   var year = last.getFullYear();
   const oneDay = `${year}-${month}-${day}`;
-
   const starttime = oneDay;
   const endtime = ymd;
 
   //Other params
+  // Min Magnitude = 5 but could add user preference later with consideration of sms volume, Global radius.
   const minmagnitude = 4;
   const maxmagnitude = 11;
   const maxradiuskm = 6371; //global
@@ -50,7 +51,7 @@ async function getUsgs() {
       `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`
     );
     if (res.status == 200) {
-    // console.log('log within res 200', res.status);
+      // console.log('log within res 200', res.status);
     }
     const resUnsortedValues = res.data.features.map((a) => {
       return {
@@ -63,183 +64,209 @@ async function getUsgs() {
     });
     const result = await resUnsortedValues.sort(); //sort asc
     return result;
-    } 
-    catch (err) {
-      console.error(err);
-    }
-}
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 async function getTwilioUsers() {
   try {
     const res = await client.chat
-    .services(serviceSid)
-    .users.list({
-      limit: 500
+      .services(serviceSid)
+      .users.list({
+        limit: 500
+      });
+    const resUsers = res.map((users) => {
+      return {
+        identity: users.identity,
+        attributes: users.attributes,
+      };
     });
-  const resUsers = res.map((users) => {
-    return {
-      identity: users.identity,
-      attributes: users.attributes,
-    };
-  });
-  const result = await resUsers;
-  return result;
-  }
-  catch (err) {
+    const result = resUsers;
+    return result;
+  } catch (err) {
     console.error(err);
   }
+};
+
+function checkMatches(resValues, resUsers) {
+  const smsToSend = []; //starts with an empty array we will use to capture any sms to send
+  console.log('start of checkMatches');
+
+  const constructPush = (parsedUser, calcDistance, activity) => {
+    console.log('constructing object to be sent');
+    const notifyTrue = {
+      cell: parsedUser.cell,
+      distance: Math.round(calcDistance),
+      mag: activity.mag,
+      time: moment(activity.time).format(
+        "MM-DD-YYYY / hh:mm A"
+      ),
+      id: activity.id,
+      attributes: parsedUser,
+      place: activity.place,
+    };
+    smsToSend.push(notifyTrue);
+  }
+
+  // map over each notification request from users
+  const fetchCompareResult = resUsers.map((user) => {
+    const parsedUser = JSON.parse(user.attributes);
+    //  check the Twilio entry has attributes and in correct format
+    if (user.attributes.length > 0 && typeof parsedUser.coordinates == "object") {
+      //map over each activity to check if it matches this user request
+      const matchingActivity = resValues.map((activity) => {
+        const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
+        console.log('distance of activity check', calcDistance);
+        const matchResult = fetchCompare(calcDistance, parsedUser.distance, 4, activity.mag); //actual distance, the minimum distance selected by user, user mag and actual mag.
+        console.log(matchResult);
+
+        if (matchResult == true) {
+          //check that user hasn't already received notification for this id here:
+          if (parsedUser.sentReceipts) { //has some receipts of previous activity
+            parsedUser.sentReceipts.forEach((id) => {
+              if (activity.id == id) {
+                console.log('already sent, will not be added to smsToSent')
+              } else {
+                //Construct the object with details needed to send sms
+                constructPush(parsedUser, calcDistance, activity)
+              }
+            })
+          } else {
+            //Construct the object with details needed to send sms
+            constructPush(parsedUser, calcDistance, activity)
+          }
+        }
+      })
+    }
+  })
+  console.log(`checkMatches complete, ${smsToSend.length} to send`);
+  return smsToSend;
+};
+
+
+// distanceBetween is used in comparison for distance check.
+// [long, lat], [long, lat] ***caution that longitude is first param and latitude is second param***
+// example: distanceBetween([-75.343, 39.984], [-75.534, 39.123]) should provide distance of 97.16km
+function distanceBetween(from, to) {
+  const fromCoords = turf.point(from);
+  const toCoords = turf.point(to);
+  const distance = turf.distance(fromCoords, toCoords).toFixed(3); // result is in km
+  return distance;
 }
 
+// Returns true or false if match. Must pass in all the params
+// seperated this out as a function to keep the main function shorter and intuitive
+function fetchCompare(calcDistance, userDistance, userMag, activityMag) {
+  if (calcDistance <= userDistance && activityMag >= userMag) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
-// Cron job here to check latest activity against potential notification.
-// frequency every 5 min, 24 hrs of activity (USGS could retrospectively add activity, not always real-time)
-// Min Magnitude = 5 but could add user preference later with consideration of sms volume, Global radius.
-cron.schedule("0 */1 * * * *", () => {
-  
-  getUsgs().then((resValues) => {
-    console.log(`**** there are currently ${resValues.length} earthquakes in the last 24hrs which could match a notification ****`);
-    console.log(resValues);
-  });
+async function sendSms(item) {
+  const twilio = require('twilio')(
+    process.env.ACC_SID,
+    process.env.TW_TOKEN
+  );
+  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}`
+  const number = item.cell;
+  twilio.messages.create({
+      to: number,
+      from: process.env.TWILIO_NUMBER,
+      body: body,
+    })
+    .then(messages => {
+      const numEnding = item.cell.slice(-4); //trim to last 4 digits 
 
-  getTwilioUsers().then((resUsers) => {
-    console.log(`**** there are currently ${resUsers.length} notifications which could match a activity, checking now ****`);
-    console.log(resUsers);
-  });
+      console.log(`Notification sent to cell num ending ${numEnding}`);
+      //then add receipt to avoid duplicates
+      attributesReceipt(item);
+    })
+    .catch(err => console.error(err));
+};
 
+function attributesReceipt(item) {
+  if (item.attributes.sentReceipts) {
+    // this is if user has previously had a notification, we'll push the receipt onto the array
+    const updatedReceipts = item.attributes.sentReceipts;
+    updatedReceipts.push(item.id);
+    const updatedAttributesMore = {
+      ...item.attributes,
+      sentReceipts: updatedReceipts,
+    };
+    // console.log(updatedAttributesMore)
+    client.chat
+      .services(serviceSid)
+      .users(item.cell)
+      .update({
+        attributes: JSON.stringify(updatedAttributesMore),
+      })
+      .then((user) => console.log('receipt stored'))
+      .catch((error) => {
+        console.log(error);
+      });
+  } else {
+    // this is if user has not previously had a notifications, we'll create receipts attribute
+    const updatedAttributes = {
+      ...item.attributes,
+      sentReceipts: [item.id],
+    };
+    // console.log(updatedAttributes);
+    client.chat
+      .services(serviceSid)
+      .users(item.cell)
+      .update({
+        attributes: JSON.stringify(updatedAttributes),
+      })
+      .then((user) => console.log('receipt stored', user))
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+};
 
+// Cron job here triggers the relevant functions for check and send notifications
+// Frequency every 5 min, 24 hrs of activity (USGS could retrospectively add activity, not always real-time as they verify before adding)
+// Sequence of events
+  //1. fetch latest earthquakes
+  //2. fetch users who signed up for notifications
+  //3. for each user, check each of the earthquakes for a match with attributes by calculating the distanceBetween and fetchCompare all handled by checkMatches
+  //4. returns array of matches in nicely formatted objects containing the info needed for the sms body
+  //5. map over the array of matches to send the sms notifications to users :-)
 
-  //         console.log("current users", resUsers);
+cron.schedule("0 */5 * * * *", () => {
+  const resValues = getUsgs().then((resValues) => {
+      console.log(`**** there are currently ${resValues.length} earthquakes in the last 24hrs which could match a notification ****`);
+      console.log(resValues);
+      getTwilioUsers().then((resUsers) => {
 
-  //         //map over each notification request from users
-  //         // console.log('start of user map');
-  //         const smsToSend = []; //starts with an empty array which will capture any sms to send.
-  //         const fetchCompareResult = resUsers.map((user) => {
-  //           const parsedUser = JSON.parse(user.attributes);
-  //           //check the Twilio entry has attributes and in correct format
-  //           if (
-  //             user.attributes.length > 0 &&
-  //             typeof parsedUser.coordinates == "object"
-  //           ) {
-  //             //map over each activity to check if it matches this user request
-  //             const matchingActivity = resValues.map((activity) => {
-  //               const calcDistance = distanceBetween(
-  //                 parsedUser.coordinates,
-  //                 activity.geo
-  //               );
-  //               // console.log('distance of activity check', calcDistance);
-  //               const matchResult = fetchCompare(
-  //                 calcDistance,
-  //                 parsedUser.distance,
-  //                 4.99,
-  //                 activity.mag
-  //               ); //setting minimum mag to 5, maybe give user option in future.
-  //               // console.log('matchResult', matchResult, parsedUser, activity);
+        console.log(`**** there are currently ${resUsers.length} notifications which could match a activity ****`);
+        const smsToSend = checkMatches(resValues, resUsers); //call function to check if any matches
+        console.log('to send', smsToSend)
+        if (smsToSend.length > 0) {
+          console.log(`**** ${smsToSend.length} notification(s) to be sent:`);
+          // Trigger SMS to be sent here by mapping over smsToSend
+          // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
+          // Timeout delay to help Twilio Server
 
-  //               if (matchResult == true) {
-  //                 //check that user hasn't already received notification for this id here:
-  //                 if (parsedUser.sentReceipts) {
-  //                   // console.log('receipts', parsedUser.sentReceipts);
-  //                   parsedUser.sentReceipts.forEach((id) => {
-  //                     if (activity.id == id) {
-  //                       // console.log('already sent, will not be added to smsToSent')
-  //                     }
-  //                   });
-  //                 } else {
-  //                   //Store the details needed to send sms
-  //                   const notifyTrue = {
-  //                     cell: parsedUser.cell,
-  //                     distance: Math.round(calcDistance),
-  //                     mag: activity.mag,
-  //                     time: moment(activity.time).format(
-  //                       "MM-DD-YYYY / hh:mm A"
-  //                     ),
-  //                     id: activity.id,
-  //                     attributes: parsedUser,
-  //                     place: activity.place,
-  //                   };
-  //                   smsToSend.push(notifyTrue);
-  //                 }
-  //               }
-  //             });
-  //           }
-  //         });
+          smsToSend.forEach((item, i) => {
+            setTimeout(() => {
+              sendSms(item);
+            }, i * 2000);
+          });
 
-  //         // console.log('Fetch comparison complete');
-  //         if (smsToSend.length > 0) {
-  //           console.log(`**** ${smsToSend.length} notification(s) to be sent:`);
-  //           // console.log(smsToSend);
-  //           // Trigger SMS to be sent here by mapping over smsToSend
-  //           // Ensure we add activity id to Twilio user attribute at this point to avoid duplicate notifications
-  //           setTimeout(() => {
-  //             smsToSend.forEach((item) => {
-  //               setTimeout(() => {
-  //                 const currentAttributes = item.attributes;
-  //                 if (item.attributes.sentReceipts) {
-  //                   // console.log('has received sms in the past', item.attributes.sentReceipts)
-  //                   const updatedReceipts = item.attributes.sentReceipts;
-  //                   updatedReceipts.push(item.id);
-  //                   const updatedAttributesMore = {
-  //                     ...item.attributes,
-  //                     sentReceipts: updatedReceipts,
-  //                   };
-  //                   // console.log(updatedAttributesMore)
-  //                   sendSms(item).then(async (response) => {
-  //                     console.log("30s delay to help Twilio servers");
-  //                     setTimeout(() => {
-  //                       console.log("send response", response);
-  //                       client.chat
-  //                         .services(serviceSid)
-  //                         .users(item.cell)
-  //                         .update({
-  //                           attributes: JSON.stringify(updatedAttributesMore),
-  //                         })
-  //                         .then((user) => console.log(user))
-  //                         .catch((error) => {
-  //                           console.log(error);
-  //                         });
-  //                     }, 30000);
-  //                   });
-  //                 } else {
-  //                   const updatedAttributes = {
-  //                     ...item.attributes,
-  //                     sentReceipts: [item.id],
-  //                   };
-  //                   // console.log(updatedAttributes);
-  //                   sendSms(item).then(async (response) => {
-  //                     console.log("30s delay to help Twilio servers");
-  //                     setTimeout(() => {
-  //                       console.log("send response", response);
-  //                       client.chat
-  //                         .services(serviceSid)
-  //                         .users(item.cell)
-  //                         .update({
-  //                           attributes: JSON.stringify(updatedAttributes),
-  //                         })
-  //                         .then((user) => console.log(user))
-  //                         .catch((error) => {
-  //                           console.log(error);
-  //                         });
-  //                     }, 30000);
-  //                   });
-  //                 }
-  //               }, 30000); //5 second timer delay between sms send to help Twilio servers
-  //             });
-  //           }, 30000); //wait 5s after initial Twilio fetch
-  //         } else {
-  //           console.log("**** no notifications to send ****");
-  //         }
-  //       });
-    // })
-    // .catch((error) => {
-    //   console.log(error);
-    // });
+        } else {
+          console.log("**** no notifications to send ****");
+        }
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
-
-
-async function firstAsync() {
-  return 42;
-}
 
 
 router.post("/create-notify", async (req, res) => {
@@ -272,43 +299,6 @@ router.post("/verify", async (req, res) => {
     message: "created",
   });
 });
-
-async function sendSms(activityData) {
-  return new Promise((res) => {
-    client.messages
-      .create({
-        body: `This is a notification from Faultline.app, an earthquake measuring ${activityData.mag} has been detected ${activityData.distance}km from the location you provided. According to USGS, the time of the earthquake was ${activityData.time} and the location was ${activityData.place}`,
-        from: process.env.TWILIO_NUMBER,
-        to: activityData.cell,
-      })
-      .done();
-  });
-}
-
-
-
-// distanceBetween will be used in comparison for distance check.
-// [long, lat], [long, lat] ***caution that longitude is first param and latitude is second param***
-// example: distanceBetween([-75.343, 39.984], [-75.534, 39.123]) should provide distance of 97.16km
-function distanceBetween(from, to) {
-  const fromCoords = turf.point(from);
-  const toCoords = turf.point(to);
-  const distance = turf.distance(fromCoords, toCoords).toFixed(3); // result is in km
-  return distance;
-}
-
-// Returns true or false if match. Must pass in all params
-// seperated this out as a function to keep the main function shorter and intuitive
-function fetchCompare(calcDistance, userDistance, userMag, activityMag) {
-  if (calcDistance <= userDistance && activityMag >= userMag) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-
-
 
 
 module.exports = router;
