@@ -186,7 +186,7 @@ cron.schedule('0 0 0 * * *', () => { //runs everyday at midnight server time.
     //top 100
   
     //Use params to get latest from USGS
-    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=50&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
+    axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=100&starttime=${starttime}&endtime=${endtime}&minmagnitude=${minmagnitude}&maxmagnitude=${maxmagnitude}&maxradiuskm=${maxradiuskm}&latitude=${latitude}&longitude=${longitude}&orderby=magnitude`)
     .then(async response=>{
       const resUnsortedValues = response.data.features.map(a => a.id)
       const resValues = resUnsortedValues.sort(); //sort asc - important to compare checksums!
