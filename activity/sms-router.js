@@ -117,24 +117,24 @@ function checkMatches(resValues, resUsers) {
       //map over each activity to check if it matches this user request
       const matchingActivity = resValues.map((activity) => {
         const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
-        console.log('distance of activity check', calcDistance);
+        // console.log('distance of activity check', calcDistance);
         const matchResult = fetchCompare(calcDistance, parsedUser.distance, 4, activity.mag); //actual distance, the minimum distance selected by user, user mag and actual mag.
-        console.log(matchResult);
+        // console.log(matchResult);
 
         if (matchResult == true) {
           //check that user hasn't already received notification for this id here:
           if (parsedUser.sentReceipts) { //has some receipts of previous activity
-            console.log('total receipts to check', parsedUser.sentReceipts.length)
+            // console.log('total receipts to check', parsedUser.sentReceipts.length)
             var found = false;
             parsedUser.sentReceipts.forEach((id) => {
-              console.log('checking receipt', activity.id, id)
+              // console.log('checking receipt', activity.id, id)
               if (activity.id == id) {
-                console.log('already sent, will not be added to smsToSent')
+                // console.log('already sent, will not be added to smsToSent')
                 found = true;
               }
             })
             if (found == true) {
-              console.log('found in receipts, will not send');
+              // console.log('found in receipts, will not send');
             } else {
               console.log('user has no receipts, adding now');
               //Construct the object with details needed to send sms
@@ -308,6 +308,24 @@ router.post("/verify", async (req, res) => {
     message: "created",
   });
 });
+
+router.get("/stop/", async (req, res) => {
+  //http://localhost:5001/api/sms/stop?uid=123456789
+
+  const user = req.query.uid;
+  console.log(user);
+
+  //twilio delete
+  const client = require('twilio')(accountSid, authToken);
+  client.chat.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+             .channels('CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+             .messages('IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+             .remove()
+              .then(response => {
+              res.send("id is " + user + "response " + response);
+    })
+    .catch(err => console.error(err));
+})
 
 
 module.exports = router;
