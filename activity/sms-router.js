@@ -124,15 +124,24 @@ function checkMatches(resValues, resUsers) {
         if (matchResult == true) {
           //check that user hasn't already received notification for this id here:
           if (parsedUser.sentReceipts) { //has some receipts of previous activity
+            console.log('total receipts to check', parsedUser.sentReceipts.length)
+            var found = false;
             parsedUser.sentReceipts.forEach((id) => {
+              console.log('checking receipt', activity.id, id)
               if (activity.id == id) {
                 console.log('already sent, will not be added to smsToSent')
-              } else {
-                //Construct the object with details needed to send sms
-                constructPush(parsedUser, calcDistance, activity)
+                found = true;
               }
             })
+            if (found == true) {
+              console.log('found in receipts, will not send');
+            } else {
+              console.log('user has no receipts, adding now');
+              //Construct the object with details needed to send sms
+              constructPush(parsedUser, calcDistance, activity)  
+            }
           } else {
+            console.log('user has no receipts, adding now');
             //Construct the object with details needed to send sms
             constructPush(parsedUser, calcDistance, activity)
           }
