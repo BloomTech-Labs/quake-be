@@ -179,7 +179,7 @@ async function sendSms(item) {
     process.env.ACC_SID,
     process.env.TW_TOKEN
   );
-  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}`
+  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}. Reply with STOP to stop notifications and START to restart them again.`
   const number = item.cell;
   twilio.messages.create({
       to: number,
@@ -308,24 +308,6 @@ router.post("/verify", async (req, res) => {
     message: "created",
   });
 });
-
-router.get("/stop/", async (req, res) => {
-  //http://localhost:5001/api/sms/stop?uid=123456789 this is an example, it will pass in the num
-
-  const user = req.query.uid;
-  console.log(user);
-
-  //twilio delete - TBD
-  // const client = require('twilio')(accountSid, authToken);
-  // client.chat.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-  //            .channels('CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-  //            .messages('IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-  //            .remove()
-  //             .then(response => {
-  //             res.send("num" + response);
-  //   })
-  //   .catch(err => console.error(err));
-})
 
 
 module.exports = router;
