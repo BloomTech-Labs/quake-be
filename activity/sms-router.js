@@ -310,21 +310,21 @@ router.post("/verify", async (req, res) => {
 });
 
 router.get("/stop/", async (req, res) => {
-  //http://localhost:5001/api/sms/stop?uid=123456789
+  //http://localhost:5001/api/sms/stop?uid=123456789 this is an example, it will pass in the num
 
   const user = req.query.uid;
   console.log(user);
 
-  //twilio delete
-  const client = require('twilio')(accountSid, authToken);
-  client.chat.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .channels('CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .messages('IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .remove()
-              .then(response => {
-              res.send("id is " + user + "response " + response);
-    })
-    .catch(err => console.error(err));
+  //twilio delete - TBD
+  // const client = require('twilio')(accountSid, authToken);
+  // client.chat.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+  //            .channels('CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+  //            .messages('IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+  //            .remove()
+  //             .then(response => {
+  //             res.send("num" + response);
+  //   })
+  //   .catch(err => console.error(err));
 })
 
 
