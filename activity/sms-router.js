@@ -179,7 +179,7 @@ async function sendSms(item) {
     process.env.ACC_SID,
     process.env.TW_TOKEN
   );
-  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}. Reply with STOP to stop notifications and START to restart them again.`
+  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}. Reply with STOP at any time to stop notifications`
   const number = item.cell;
   twilio.messages
     .create({
