@@ -37,7 +37,7 @@ async function getUsgs() {
 
   //Other params
   // Min Magnitude = 5 but could add user preference later with consideration of sms volume, Global radius.
-  const minmagnitude = 4;
+  const minmagnitude = 4.9;
   const maxmagnitude = 11;
   const maxradiuskm = 6371; //global
   const latitude = 37.2751; //just needs some long/lat to pull global
@@ -118,12 +118,7 @@ function checkMatches(resValues, resUsers) {
           activity.geo
         );
         // console.log('distance of activity check', calcDistance);
-        const matchResult = fetchCompare(
-          calcDistance,
-          parsedUser.distance,
-          4,
-          activity.mag
-        ); //actual distance, the minimum distance selected by user, user mag and actual mag.
+        const matchResult = fetchCompare(calcDistance, parsedUser.distance, 4.9, activity.mag); //actual distance, the minimum distance selected by user, user mag and actual mag.
         // console.log(matchResult);
 
         if (matchResult == true) {
@@ -180,8 +175,11 @@ function fetchCompare(calcDistance, userDistance, userMag, activityMag) {
 }
 
 async function sendSms(item) {
-  const twilio = require("twilio")(process.env.ACC_SID, process.env.TW_TOKEN);
-  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}`;
+  const twilio = require('twilio')(
+    process.env.ACC_SID,
+    process.env.TW_TOKEN
+  );
+  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}. Reply with STOP to stop notifications and START to restart them again.`
   const number = item.cell;
   twilio.messages
     .create({
@@ -339,23 +337,5 @@ router.post("/verify", async (req, res) => {
   });
 });
 
-router.get("/stop/", async (req, res) => {
-  //http://localhost:5001/api/sms/stop?uid=123456789
-
-  const user = req.query.uid;
-  console.log(user);
-
-  //twilio delete
-  const client = require("twilio")(accountSid, authToken);
-  client.chat
-    .services("ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    .channels("CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    .messages("IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    .remove()
-    .then((response) => {
-      res.send("id is " + user + "response " + response);
-    })
-    .catch((err) => console.error(err));
-});
 
 module.exports = router;
