@@ -14,10 +14,8 @@ const {
   ConversationPage,
 } = require("twilio/lib/rest/conversations/v1/conversation");
 
-
 // '/api/sms' <-- this is path to any endpoints in this router.
 const router = express.Router();
-
 
 async function getUsgs() {
   //Get the params for query ready
@@ -67,15 +65,13 @@ async function getUsgs() {
   } catch (err) {
     console.error(err);
   }
-};
+}
 
 async function getTwilioUsers() {
   try {
-    const res = await client.chat
-      .services(serviceSid)
-      .users.list({
-        limit: 500
-      });
+    const res = await client.chat.services(serviceSid).users.list({
+      limit: 500,
+    });
     const resUsers = res.map((users) => {
       return {
         identity: users.identity,
@@ -87,43 +83,53 @@ async function getTwilioUsers() {
   } catch (err) {
     console.error(err);
   }
-};
+}
 
 function checkMatches(resValues, resUsers) {
   const smsToSend = []; //starts with an empty array we will use to capture any sms to send
-  console.log('start of checkMatches');
+  console.log("start of checkMatches");
 
   const constructPush = (parsedUser, calcDistance, activity) => {
-    console.log('constructing object to be sent');
+    console.log("constructing object to be sent");
     const notifyTrue = {
       cell: parsedUser.cell,
       distance: Math.round(calcDistance),
       mag: activity.mag,
-      time: moment(activity.time).format(
-        "MM-DD-YYYY / hh:mm A"
-      ),
+      time: moment(activity.time).format("MM-DD-YYYY / hh:mm A"),
       id: activity.id,
       attributes: parsedUser,
       place: activity.place,
     };
     smsToSend.push(notifyTrue);
-  }
+  };
 
   // map over each notification request from users
   const fetchCompareResult = resUsers.map((user) => {
     const parsedUser = JSON.parse(user.attributes);
     //  check the Twilio entry has attributes and in correct format
-    if (user.attributes.length > 0 && typeof parsedUser.coordinates == "object") {
+    if (
+      user.attributes.length > 0 &&
+      typeof parsedUser.coordinates == "object"
+    ) {
       //map over each activity to check if it matches this user request
       const matchingActivity = resValues.map((activity) => {
-        const calcDistance = distanceBetween(parsedUser.coordinates, activity.geo);
+        const calcDistance = distanceBetween(
+          parsedUser.coordinates,
+          activity.geo
+        );
         // console.log('distance of activity check', calcDistance);
-        const matchResult = fetchCompare(calcDistance, parsedUser.distance, 4, activity.mag); //actual distance, the minimum distance selected by user, user mag and actual mag.
+        const matchResult = fetchCompare(
+          calcDistance,
+          parsedUser.distance,
+          4,
+          activity.mag
+        ); //actual distance, the minimum distance selected by user, user mag and actual mag.
         // console.log(matchResult);
 
         if (matchResult == true) {
           //check that user hasn't already received notification for this id here:
-          if (parsedUser.sentReceipts) { //has some receipts of previous activity
+          if (parsedUser.sentReceipts) {
+            //has some receipts of previous activity
             // console.log('total receipts to check', parsedUser.sentReceipts.length)
             var found = false;
             parsedUser.sentReceipts.forEach((id) => {
@@ -132,27 +138,26 @@ function checkMatches(resValues, resUsers) {
                 // console.log('already sent, will not be added to smsToSent')
                 found = true;
               }
-            })
+            });
             if (found == true) {
               // console.log('found in receipts, will not send');
             } else {
-              console.log('user has no receipts, adding now');
+              console.log("user has no receipts, adding now");
               //Construct the object with details needed to send sms
-              constructPush(parsedUser, calcDistance, activity)  
+              constructPush(parsedUser, calcDistance, activity);
             }
           } else {
-            console.log('user has no receipts, adding now');
+            console.log("user has no receipts, adding now");
             //Construct the object with details needed to send sms
-            constructPush(parsedUser, calcDistance, activity)
+            constructPush(parsedUser, calcDistance, activity);
           }
         }
-      })
+      });
     }
-  })
+  });
   console.log(`checkMatches complete, ${smsToSend.length} to send`);
   return smsToSend;
-};
-
+}
 
 // distanceBetween is used in comparison for distance check.
 // [long, lat], [long, lat] ***caution that longitude is first param and latitude is second param***
@@ -175,26 +180,24 @@ function fetchCompare(calcDistance, userDistance, userMag, activityMag) {
 }
 
 async function sendSms(item) {
-  const twilio = require('twilio')(
-    process.env.ACC_SID,
-    process.env.TW_TOKEN
-  );
-  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}`
+  const twilio = require("twilio")(process.env.ACC_SID, process.env.TW_TOKEN);
+  const body = `This is a notification from Faultline.app, an earthquake measuring ${item.mag} has been detected ${item.distance}km from the location you provided. According to USGS, the time of the earthquake was ${item.time} and the location was ${item.place}`;
   const number = item.cell;
-  twilio.messages.create({
+  twilio.messages
+    .create({
       to: number,
       from: process.env.TWILIO_NUMBER,
       body: body,
     })
-    .then(messages => {
-      const numEnding = item.cell.slice(-4); //trim to last 4 digits 
+    .then((messages) => {
+      const numEnding = item.cell.slice(-4); //trim to last 4 digits
 
       console.log(`Notification sent to cell num ending ${numEnding}`);
       //then add receipt to avoid duplicates
       attributesReceipt(item);
     })
-    .catch(err => console.error(err));
-};
+    .catch((err) => console.error(err));
+}
 
 function attributesReceipt(item) {
   if (item.attributes.sentReceipts) {
@@ -212,7 +215,7 @@ function attributesReceipt(item) {
       .update({
         attributes: JSON.stringify(updatedAttributesMore),
       })
-      .then((user) => console.log('receipt stored'))
+      .then((user) => console.log("receipt stored"))
       .catch((error) => {
         console.log(error);
       });
@@ -229,31 +232,35 @@ function attributesReceipt(item) {
       .update({
         attributes: JSON.stringify(updatedAttributes),
       })
-      .then((user) => console.log('receipt stored', user))
+      .then((user) => console.log("receipt stored", user))
       .catch((error) => {
         console.log(error);
       });
-  };
-};
+  }
+}
 
 // Cron job here triggers the relevant functions for check and send notifications
 // Frequency every 5 min, 24 hrs of activity (USGS could retrospectively add activity, not always real-time as they verify before adding)
 // Sequence of events
-  //1. fetch latest earthquakes
-  //2. fetch users who signed up for notifications
-  //3. for each user, check each of the earthquakes for a match with attributes by calculating the distanceBetween and fetchCompare all handled by checkMatches
-  //4. returns array of matches in nicely formatted objects containing the info needed for the sms body
-  //5. map over the array of matches to send the sms notifications to users :-)
+//1. fetch latest earthquakes
+//2. fetch users who signed up for notifications
+//3. for each user, check each of the earthquakes for a match with attributes by calculating the distanceBetween and fetchCompare all handled by checkMatches
+//4. returns array of matches in nicely formatted objects containing the info needed for the sms body
+//5. map over the array of matches to send the sms notifications to users :-)
 
 cron.schedule("0 */5 * * * *", () => {
-  const resValues = getUsgs().then((resValues) => {
-      console.log(`**** there are currently ${resValues.length} earthquakes in the last 24hrs which could match a notification ****`);
+  const resValues = getUsgs()
+    .then((resValues) => {
+      console.log(
+        `**** there are currently ${resValues.length} earthquakes in the last 24hrs which could match a notification ****`
+      );
       console.log(resValues);
       getTwilioUsers().then((resUsers) => {
-
-        console.log(`**** there are currently ${resUsers.length} notifications which could match a activity ****`);
+        console.log(
+          `**** there are currently ${resUsers.length} notifications which could match a activity ****`
+        );
         const smsToSend = checkMatches(resValues, resUsers); //call function to check if any matches
-        console.log('to send', smsToSend)
+        console.log("to send", smsToSend);
         if (smsToSend.length > 0) {
           console.log(`**** ${smsToSend.length} notification(s) to be sent:`);
           // Trigger SMS to be sent here by mapping over smsToSend
@@ -265,7 +272,6 @@ cron.schedule("0 */5 * * * *", () => {
               sendSms(item);
             }, i * 2000);
           });
-
         } else {
           console.log("**** no notifications to send ****");
         }
@@ -276,7 +282,31 @@ cron.schedule("0 */5 * * * *", () => {
     });
 });
 
+router.post("/signup-sms", async (req, res) => {
+  const item = req.body;
+  console.log(item);
 
+  await sendFirstSms(item);
+  res.status(200).json({
+    message: "created",
+  });
+});
+
+const sendFirstSms = (item) => {
+  const twilio = require("twilio")(process.env.ACC_SID, process.env.TW_TOKEN);
+  const body = `This is a notification from Faultline.app, you will now receive Earthquake alerts based on your location and selected distance range of ${item.distance}km`;
+  const number = item.cell;
+  twilio.messages
+    .create({
+      to: number,
+      from: process.env.TWILIO_NUMBER,
+      body: body,
+    })
+    .then((messages) => {
+      console.log("Message sent", messages);
+    })
+    .catch((err) => console.error(err));
+};
 
 router.post("/create-notify", async (req, res) => {
   const user = req.body;
@@ -316,16 +346,16 @@ router.get("/stop/", async (req, res) => {
   console.log(user);
 
   //twilio delete
-  const client = require('twilio')(accountSid, authToken);
-  client.chat.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .channels('CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .messages('IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-             .remove()
-              .then(response => {
-              res.send("id is " + user + "response " + response);
+  const client = require("twilio")(accountSid, authToken);
+  client.chat
+    .services("ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    .channels("CHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    .messages("IMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    .remove()
+    .then((response) => {
+      res.send("id is " + user + "response " + response);
     })
-    .catch(err => console.error(err));
-})
-
+    .catch((err) => console.error(err));
+});
 
 module.exports = router;
