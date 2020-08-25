@@ -327,15 +327,4 @@ function createUser(user) {
     .then((N = (newUser) => console.log(newUser)));
 }
 
-router.post("/verify", async (req, res) => {
-  const user = "+17605297438";
-  console.log(user);
-
-  verifyUser(user);
-  res.status(200).json({
-    message: "created",
-  });
-});
-
-
 module.exports = router;
