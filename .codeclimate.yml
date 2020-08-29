@@ -20,3 +20,6 @@ exclude_patterns:
   - "**/vendor/"
   - "**/node_modules/"
   - "**/data/"
+  - "**/activity/refresh-router.js"
+
+
